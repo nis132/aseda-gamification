@@ -162,7 +162,7 @@
                 <a href="{{ route('siswa.materi') }}" class="btn btn-outline-primary">
                     <i class="fas fa-book me-2"></i> Materi
                 </a>
-                <a href="{{ route('siswa.leaderboard') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('leaderboard') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-trophy me-2"></i> Leaderboard
                 </a>
             </div>

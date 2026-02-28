@@ -11,6 +11,10 @@ use App\Models\JawabanSiswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\BadgeService;
+use App\Models\SiswaBadge;
+use App\Models\Badge;
+
 
 class SiswaController extends Controller
 {
@@ -91,100 +95,140 @@ public function submit(Request $request, Tantangan $tantangan)
     $jawabans = $request->jawaban ?? [];
     $totalNilai = 0;
     $totalSoal = $tantangan->soal->count();
+    $soalDinilai = 0; // hanya soal auto
 
-    // Simpan jawaban siswa
     foreach ($tantangan->soal as $soal) {
-        $jawabanSiswa = $jawabans[$soal->id] ?? '';
-        $benar = strtoupper($jawabanSiswa) == $soal->jawaban_benar ? 100 : 0;
-        
+
+        $jawabanSiswa = $jawabans[$soal->id] ?? null;
+        $nilai = 0;
+        $manual = 0;
+
+        // ======================
+        // PILIHAN GANDA
+        // ======================
+        if ($soal->tipe == 'pg') {
+
+            $nilai = strtoupper($jawabanSiswa) == $soal->jawaban_benar ? 100 : 0;
+            $totalNilai += $nilai;
+            $soalDinilai++;
+        }
+
+        // ======================
+        // MATCHING
+        // ======================
+        elseif ($soal->tipe == 'matching') {
+
+            $pairsBenar = json_decode($soal->matching_pairs, true) ?? [];
+            $pairsJawaban = json_decode($jawabanSiswa, true) ?? [];
+
+            $benarCount = 0;
+
+            foreach ($pairsBenar as $key => $value) {
+                if (isset($pairsJawaban[$key]) && $pairsJawaban[$key] == $value) {
+                    $benarCount++;
+                }
+            }
+
+            $jumlahPair = count($pairsBenar);
+            $nilai = $jumlahPair > 0 ? ($benarCount / $jumlahPair) * 100 : 0;
+
+            $totalNilai += $nilai;
+            $soalDinilai++;
+        }
+
+        // ======================
+        // ESSAY
+        // ======================
+        else {
+
+            $nilai = null;
+            $manual = 1; // harus dinilai guru
+        }
+
         JawabanSiswa::create([
             'siswa_id' => auth()->id(),
             'tantangan_id' => $tantangan->id,
             'soal_id' => $soal->id,
             'jawaban' => $jawabanSiswa,
-            'nilai' => $benar,
-            'dinilai_manual' => 0
+            'nilai' => $nilai,
+            'dinilai_manual' => $manual
         ]);
-
-        $totalNilai += $benar;
     }
 
-    $rataNilai = $totalSoal > 0 ? $totalNilai / $totalSoal : 0;
+    // ======================
+    // HITUNG NILAI RATA AUTO
+    // ======================
+
+    $rataNilai = $soalDinilai > 0 ? $totalNilai / $soalDinilai : 0;
     $poinDidapat = round(($rataNilai / 100) * $tantangan->poin);
 
-    // Simpan nilai tantangan
     NilaiTantangan::create([
         'siswa_id' => auth()->id(),
         'tantangan_id' => $tantangan->id,
-        'total_nilai' => $rataNilai,
+        'total_nilai' => $rataNilai, // nanti akan diupdate setelah manual grading
         'poin_didapat' => $poinDidapat,
         'waktu_submit' => now()
     ]);
 
+    $mapelId = $tantangan->mapel_id;
+    $siswaId = auth()->id();
+
+    BadgeService::checkKeaktifan($siswaId, $mapelId);
+    BadgeService::checkPrestasi($siswaId);
     $this->updateLeaderboard();
 
-    // 🔥 FIX: FLASH MESSAGE bukan JSON!
     return redirect()->route('siswa.tantangan')
         ->with([
             'success' => true,
             'message' => "🎉 Tantangan selesai!",
-            'nilai' => round($rataNilai, 1) . '%',
+            'nilai' => round($rataNilai, 1) . '% (sementara)',
             'poin' => $poinDidapat,
             'total_soal' => $totalSoal
         ]);
 }
+private function updateLeaderboard()
+{
+    $siswaId = auth()->id();
+    $kelasId = auth()->user()->kelasIds()->first();
+
+    $totalPoin = \App\Models\NilaiTantangan::where('siswa_id', $siswaId)
+        ->sum('poin_didapat');
+
+    \App\Models\Leaderboard::updateOrCreate(
+        [
+            'siswa_id' => $siswaId,
+            'kelas_id' => $kelasId
+        ],
+        [
+            'total_poin' => $totalPoin
+        ]
+    );
+}
 
 
-    public function leaderboard()
-    {
-        $kelasId = auth()->user()->kelasIds()->first();
-        $leaderboard = Leaderboard::where('kelas_id', $kelasId)
-            ->with('siswa')
-            ->orderBy('total_poin', 'desc')
-            ->orderBy('updated_at', 'desc')
-            ->take(20)
-            ->get();
+public function profil()
+{
+    $profil = auth()->user();
+    $leaderboard = Leaderboard::where('siswa_id', $profil->id)->first();
+    $tantanganSelesai = NilaiTantangan::where('siswa_id', $profil->id)->count();
 
-        $myRank = Leaderboard::where('kelas_id', $kelasId)
-            ->where('siswa_id', auth()->id())
-            ->first()?->rank ?? '-';
+    // 🔥 Ambil badge yang dimiliki siswa
+    $badges = SiswaBadge::with('badge')
+        ->where('siswa_id', $profil->id)
+        ->get()
+        ->groupBy('badge_id');
 
-        return view('siswa.leaderboard', compact('leaderboard', 'myRank'));
-    }
+    // Ambil semua master badge
+    $masterBadges = Badge::all();
 
-    public function profil()
-    {
-        $profil = auth()->user();
-        $leaderboard = Leaderboard::where('siswa_id', $profil->id)->first();
-        $tantanganSelesai = NilaiTantangan::where('siswa_id', $profil->id)->count();
-
-        return view('siswa.profil', compact('profil', 'leaderboard', 'tantanganSelesai'));
-    }
-
-    private function updateLeaderboard()
-    {
-        $kelasId = auth()->user()->kelasIds()->first();
-        $totalPoin = NilaiTantangan::where('siswa_id', auth()->id())->sum('poin_didapat');
-
-        Leaderboard::updateOrCreate(
-            ['siswa_id' => auth()->id(), 'kelas_id' => $kelasId],
-            ['total_poin' => $totalPoin, 'updated_at' => now()]
-        );
-
-        // Update rank per kelas
-        DB::table('leaderboard')
-            ->where('kelas_id', $kelasId)
-            ->orderBy('total_poin', 'desc')
-            ->orderBy('updated_at', 'desc')
-            ->chunk(100, function ($items) use ($kelasId) {
-                foreach ($items as $index => $item) {
-                    DB::table('leaderboard')
-                        ->where('id', $item->id)
-                        ->update(['rank' => $index + 1]);
-                }
-            });
-    }
-
+    return view('siswa.profil', compact(
+        'profil',
+        'leaderboard',
+        'tantanganSelesai',
+        'badges',
+        'masterBadges'
+    ));
+}
     public function materiShow(Materi $materi)
 {
     $materi->load('mapel', 'guru');

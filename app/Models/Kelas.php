@@ -14,14 +14,14 @@ class Kelas extends Model
         'keterangan'
     ];
 
-    // Relasi ke User (Siswa & Guru)
     public function siswa()
     {
-        return $this->hasMany(User::class, 'kelas', 'nama');
+        return $this->belongsToMany(
+            \App\Models\User::class,
+            'siswa_kelas',
+            'kelas_id',
+            'siswa_id'
+        );
     }
 
-    public function guru()
-    {
-        return $this->belongsTo(User::class, 'wali_kelas', 'nama');
-    }
 }

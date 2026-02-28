@@ -1,21 +1,23 @@
 <?php
+
 namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tantangan;
 use App\Models\Kelas;
 use App\Models\Mapel;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class TantanganController extends Controller
 {
     public function index()
     {
         $guruId = Auth::id();
-        
-        $tantangan = Tantangan::with(['mapel', 'kelas'])
+        $tantangan = Tantangan::with(['mapel', 'kelas', 'guru'])
             ->where('guru_id', $guruId)
             ->latest()
             ->paginate(10);
@@ -25,12 +27,8 @@ class TantanganController extends Controller
 
 public function create()
 {
-    $kelas = Kelas::all(['id', 'nama_kelas']);
-    $mapelGuru = Mapel::whereHas('guruMapel', function($q) {
-        $q->where('guru_id', Auth::id());
-    })->with('guruMapel')->get(['id', 'nama_mapel']);
-
-    return view('guru.tantangan.create', compact('kelas', 'mapelGuru'));
+    $kelas = Kelas::select('id', 'nama_kelas')->get();
+    return view('guru.tantangan.create', compact('kelas'));
 }
 
 public function store(Request $request)
@@ -38,55 +36,88 @@ public function store(Request $request)
     $request->validate([
         'judul' => 'required|max:255',
         'deskripsi' => 'required',
-        'mapel_id' => 'required|exists:mapel,id',
         'kelas_id' => 'required|exists:kelas,id',
-        'tipe' => 'required|in:pg,essay,matching',
         'batas_waktu' => 'required|date|after:now',
-        'poin' => 'required|integer|min:1|max:1000'
+        'poin' => 'required|integer|min:1|max:1000',
     ]);
 
-    $tantangan = Tantangan::create(array_merge($request->all(), [
-        'guru_id' => Auth::id()
-    ]));
+    $guru = Auth::user();
 
-    return redirect()->route('guru.tantangan.show', $tantangan)
-        ->with('success', 'Tantangan berhasil dibuat! Tambahkan soal sekarang.');
-}
+    // ambil mapel pertama guru
+    $mapel = $guru->mapel()->first();
 
-public function show(Tantangan $tantangan)
-{
-    if ($tantangan->guru_id !== Auth::id()) {
-        abort(403);
+    if (!$mapel) {
+        return back()->withErrors(['mapel' => 'Guru belum memiliki mapel!']);
     }
 
-    $tantangan->load(['soal', 'mapel', 'kelas', 'jawabanSiswa.siswa', 'nilaiTantangan.siswa']);
-    
-    $siswaCount = DB::table('siswa_kelas')
-        ->where('kelas_id', $tantangan->kelas_id)
-        ->count();
+    $tantangan = Tantangan::create([
+        'judul' => $request->judul,
+        'deskripsi' => $request->deskripsi,
+        'mapel_id' => $mapel->id,
+        'guru_id' => $guru->id,
+        'kelas_id' => $request->kelas_id,
+        'batas_waktu' => $request->batas_waktu,
+        'poin' => $request->poin,
+        'status' => 'draft',
+    ]);
 
-    return view('guru.tantangan.show', compact('tantangan', 'siswaCount'));
+    return redirect()->route('guru.soal.create', $tantangan)
+        ->with('success', 'Tantangan dibuat! Sekarang tambahkan soal.');
 }
 
+    public function show(Tantangan $tantangan)
+    {
+        if ($tantangan->guru_id != Auth::id()) {
+            abort(403);
+        }
+
+        $tantangan->load(['soal', 'mapel', 'kelas', 'jawabanSiswa.siswa', 'nilaiTantangan.siswa']);
+        $siswaCount = DB::table('siswa_kelas')
+            ->where('kelas_id', $tantangan->kelas_id)
+            ->count();
+
+        return view('guru.tantangan.show', compact('tantangan', 'siswaCount'));
+    }
+
+public function publish(Tantangan $tantangan)
+{
+    if ($tantangan->guru_id !== Auth::id()) abort(403);
+    if ($tantangan->soal->count() < 3) {
+        return back()->with('error', 'Minimal 3 soal untuk publish!');
+    }
+
+    $tantangan->update(['status' => 'published']);
+    
+    $siswaIds = DB::table('siswa_kelas')
+        ->where('kelas_id', $tantangan->kelas_id)
+        ->pluck('siswa_id');
+    
+
+    $notifMessage = "Tantangan '{$tantangan->judul}' sudah dipublikasikan!";
+    
+    return redirect()->route('guru.tantangan.index')
+        ->with('success', 'Tantangan dipublikasikan!')
+        ->with('notif_message', $notifMessage); // Kirim ke view
+}
 
 
     public function edit(Tantangan $tantangan)
     {
-        if ($tantangan->guru_id !== Auth::id()) {
+        if ($tantangan->guru_id != Auth::id()) {
             abort(403);
         }
 
-        $kelas = Kelas::all();
+        $kelas = Kelas::select('id', 'nama_kelas')->get();
         $mapelGuru = Mapel::whereHas('guruMapel', function($q) {
             $q->where('guru_id', Auth::id());
-        })->get();
+        })->select('id', 'nama_mapel')->get();
 
         return view('guru.tantangan.edit', compact('tantangan', 'kelas', 'mapelGuru'));
     }
 
     public function update(Request $request, Tantangan $tantangan)
     {
-        if ($tantangan->guru_id !== Auth::id()) {
+        if ($tantangan->guru_id != Auth::id()) {
             abort(403);
         }
 
@@ -97,7 +128,7 @@ public function show(Tantangan $tantangan)
             'kelas_id' => 'required|exists:kelas,id',
             'tipe' => 'required|in:pg,essay,matching',
             'batas_waktu' => 'required|date|after:now',
-            'poin' => 'required|integer|min:1|max:1000'
+            'poin' => 'required|integer|min:1|max:1000',
         ]);
 
         $tantangan->update($request->all());
@@ -108,11 +139,12 @@ public function show(Tantangan $tantangan)
 
     public function destroy(Tantangan $tantangan)
     {
-        if ($tantangan->guru_id !== Auth::id()) {
+        if ($tantangan->guru_id != Auth::id()) {
             abort(403);
         }
 
         $tantangan->delete();
-        return back()->with('success', 'Tantangan berhasil dihapus!');
+
+        return back()->with('success', 'Tantangan dihapus!');
     }
 }

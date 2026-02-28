@@ -39,11 +39,6 @@
                             <i class="fas fa-user me-2"></i>Profil
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
-                            <i class="fas fa-chart-bar me-2"></i>Statistik
-                        </button>
-                    </li>
                     @if($user->role == 'guru')
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="guru-tab" data-bs-toggle="tab" data-bs-target="#guru" type="button" role="tab">
@@ -69,13 +64,13 @@
                         <div class="tab-pane fade show active p-4 bg-light rounded-3 mb-4" id="profile" role="tabpanel">
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold fs-5 text-dark">👤 Nama Lengkap</label>
+                                    <label class="form-label fw-bold fs-5 text-dark">Nama Lengkap</label>
                                     <input type="text" name="nama" class="form-control form-control-lg @error('nama') is-invalid @enderror" 
                                            value="{{ old('nama', $user->nama) }}" required>
                                     @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold fs-5 text-dark">🆔 Username</label>
+                                    <label class="form-label fw-bold fs-5 text-dark">Username</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-secondary">
                                             <i class="fas fa-at"></i>
@@ -89,68 +84,16 @@
 
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold fs-5 text-dark">🔐 Password Baru</label>
+                                    <label class="form-label fw-bold fs-5 text-dark">Password Baru</label>
                                     <div class="form-text mb-2">Kosongkan jika tidak ingin ubah password</div>
                                     <input type="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror" 
                                            placeholder="Kosongkan untuk tetap password lama">
                                     @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold fs-5 text-dark">🔗 Konfirmasi Password</label>
+                                    <label class="form-label fw-bold fs-5 text-dark">Konfirmasi Password</label>
                                     <input type="password" name="password_confirmation" class="form-control form-control-lg @error('password_confirmation') is-invalid @enderror" 
                                            placeholder="Ulangi password baru">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TAB STATISTIK -->
-                        <div class="tab-pane fade p-4 bg-light rounded-3 mb-4" id="stats" role="tabpanel">
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold text-success fs-5">⭐ Total Poin</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-success text-white">
-                                            <i class="fas fa-coins"></i>
-                                        </span>
-                                        <input type="number" name="total_poin" class="form-control form-control-lg" 
-                                               value="{{ old('total_poin', $user->total_poin) }}" min="0" max="999999">
-                                        <span class="input-group-text text-success">XP</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold text-warning fs-5">🎮 Level</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-warning text-dark">
-                                            <i class="fas fa-level-up-alt"></i>
-                                        </span>
-                                        <input type="number" name="level" class="form-control form-control-lg" 
-                                               value="{{ old('level', $user->level) }}" min="1" max="100">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <hr class="my-4">
-                            <div class="row text-center">
-                                <div class="col-md-4">
-                                    <div class="bg-primary text-white rounded-3 p-4 shadow-sm">
-                                        <i class="fas fa-award fa-3x mb-3 opacity-75"></i>
-                                        <h4 class="fw-bold mb-1">{{ number_format($user->total_poin) }}</h4>
-                                        <small class="opacity-75">Total XP</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="bg-warning text-dark rounded-3 p-4 shadow-sm">
-                                        <i class="fas fa-layer-group fa-3x mb-3"></i>
-                                        <h4 class="fw-bold mb-1">Lv.{{ $user->level }}</h4>
-                                        <small>Level Saat ini</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="bg-success text-white rounded-3 p-4 shadow-sm">
-                                        <i class="fas fa-users fa-3x mb-3 opacity-75"></i>
-                                        <h4 class="fw-bold mb-1">{{ ucfirst($user->role) }}</h4>
-                                        <small>Role Tetap</small>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -160,14 +103,15 @@
                         <div class="tab-pane fade p-4 bg-light rounded-3 mb-4" id="guru" role="tabpanel">
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success fs-5">📚 Mata Pelajaran</label>
-                                    <input type="text" name="mapel" class="form-control form-control-lg" 
-                                           value="{{ old('mapel', $user->mapel ?? '') }}" placeholder="Matematika, IPA, dll">
-                                </div>
-                                <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success fs-5">📱 No. Telepon</label>
-                                    <input type="tel" name="phone" class="form-control form-control-lg" 
-                                           value="{{ old('phone', $user->phone ?? '') }}" placeholder="081234567890">
+                                    <label class="form-label fw-bold text-success fs-5">Mata Pelajaran</label>
+                                        <select name="mapel_id" class="form-select form-control-lg">
+                                            <option value="">Pilih Mata Pelajaran</option>
+                                            @foreach($mapel as $m)
+                                                <option value="{{ $m->id }}">
+                                                    {{ $m->nama_mapel }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                 </div>
                             </div>
                         </div>

@@ -138,7 +138,7 @@
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <a href="{{ route('siswa.leaderboard') }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 rounded-3 border-0 shadow-sm hover-lift">
+                        <a href="{{ route('leaderboard') }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 rounded-3 border-0 shadow-sm hover-lift">
                             <i class="fas fa-trophy fa-2x mb-2 text-info"></i>
                             <span class="fw-bold fs-6">Leaderboard</span>
                         </a>

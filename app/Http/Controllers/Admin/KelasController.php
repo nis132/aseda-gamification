@@ -77,4 +77,15 @@ class KelasController extends Controller
         $kelas->delete();
         return back()->with('success', 'Kelas dihapus!');
     }
+    public function show(Kelas $kelas)
+{
+    if (!auth()->user()->isAdmin()) {
+        abort(403);
+    }
+
+    $siswa = $kelas->siswa()->where('role', 'siswa')->get();
+
+    return view('admin.kelas.show', compact('kelas', 'siswa'));
+}
+
 }

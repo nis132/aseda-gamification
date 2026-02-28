@@ -1,29 +1,25 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Soal extends Model
 {
-     protected $table = 'soal';
-    protected $fillable = [
-        'tantangan_id', 'pertanyaan', 'pilihan_a', 'pilihan_b', 
-        'pilihan_c', 'pilihan_d', 'jawaban_benar'
-    ];
+    protected $table = 'soal';
+    
+protected $fillable = [
+    'tantangan_id', 'pertanyaan', 'tipe', 'opsi_a', 'opsi_b', 'opsi_c', 'opsi_d',
+    'jawaban_benar', 'kiri_items', 'kanan_items', 'matching_pairs', 'matching_count'
+];
 
-    // Relationship ke Tantangan
+protected $casts = [
+    'kiri_items' => 'array',
+    'kanan_items' => 'array', 
+    'matching_pairs' => 'array'
+];
+
     public function tantangan()
     {
-        return $this->belongsTo(Tantangan::class);
+        return $this->belongsTo(Tantangan::class, 'tantangan_id');
     }
-
-    // 🔥 FIX: Relationship ke Jawaban (opsional)
-    public function jawabanSiswa()
-    {
-        return $this->hasMany(JawabanSiswa::class, 'soal_id');
-    }
-
-    // Jawaban benar TIDAK PERLU relationship - itu column biasa!
-    // $soal->jawaban_benar = 'A' langsung access
 }

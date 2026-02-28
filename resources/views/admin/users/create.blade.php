@@ -22,6 +22,60 @@
                 </div>
             </div>
 
+<div class="bg-light p-4 border-bottom">
+
+    <!-- ADMIN -->
+    <div id="admin-tools" class="role-tools">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ route('admin.export.admin') }}" class="btn btn-danger">
+                <i class="fas fa-download me-1"></i> Template Admin
+            </a>
+
+            <form action="{{ route('admin.import.admin') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                @csrf
+                <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-file-import me-1"></i> Import Admin
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GURU -->
+    <div id="guru-tools" class="role-tools d-none">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ route('admin.export.guru') }}" class="btn btn-success">
+                <i class="fas fa-download me-1"></i> Template Guru
+            </a>
+
+            <form action="{{ route('admin.import.guru') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                @csrf
+                <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
+                <button type="submit" class="btn btn-outline-success">
+                    <i class="fas fa-file-import me-1"></i> Import Guru
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SISWA -->
+    <div id="siswa-tools" class="role-tools d-none">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ route('admin.export.siswa') }}" class="btn btn-primary">
+                <i class="fas fa-download me-1"></i> Template Siswa
+            </a>
+
+            <form action="{{ route('admin.import.siswa') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
+                @csrf
+                <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-file-import me-1"></i> Import Siswa
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
             <div class="card-body p-0">
                 <!-- Nav Tabs -->
                 <ul class="nav nav-tabs border-0 mb-0 bg-light" id="userTabs" role="tablist">
@@ -52,13 +106,13 @@
                             
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-danger">👑 Nama Lengkap Admin</label>
+                                    <label class="form-label fw-bold text-danger">Nama Lengkap Admin</label>
                                     <input type="text" name="nama" class="form-control form-control-lg @error('nama') is-invalid @enderror" 
                                            value="{{ old('nama') }}" placeholder="Contoh: Admin Utama" required>
                                     @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-danger">🆔 Username Admin</label>
+                                    <label class="form-label fw-bold text-danger">Username Admin</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-danger text-white"><i class="fas fa-user-shield"></i></span>
                                         <input type="text" name="username" class="form-control form-control-lg @error('username') is-invalid @enderror" 
@@ -70,13 +124,13 @@
 
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-danger">🔐 Password</label>
+                                    <label class="form-label fw-bold text-danger">Password</label>
                                     <input type="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror" 
                                            placeholder="Minimal 6 karakter" required>
                                     @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-danger">🔗 Konfirmasi Password</label>
+                                    <label class="form-label fw-bold text-danger">Konfirmasi Password</label>
                                     <input type="password" name="password_confirmation" class="form-control form-control-lg @error('password_confirmation') is-invalid @enderror" 
                                            placeholder="Ulangi password" required>
                                 </div>
@@ -98,13 +152,13 @@
                             
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success">👨‍🏫 Nama Lengkap Guru</label>
+                                    <label class="form-label fw-bold text-success">Nama Lengkap Guru</label>
                                     <input type="text" name="nama" class="form-control form-control-lg @error('nama') is-invalid @enderror" 
                                            value="{{ old('nama') }}" placeholder="Contoh: Budi Santoso S.Pd" required>
                                     @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success">🆔 Username Guru</label>
+                                    <label class="form-label fw-bold text-success">Username Guru</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-success text-white"><i class="fas fa-chalkboard-teacher"></i></span>
                                         <input type="text" name="username" class="form-control form-control-lg @error('username') is-invalid @enderror" 
@@ -116,25 +170,26 @@
 
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success">📚 Mata Pelajaran</label>
-                                    <input type="text" name="mapel" class="form-control form-control-lg" 
-                                           placeholder="Matematika, IPA, Bahasa Indonesia, dll">
-                                </div>
-                                <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success">📱 No. HP</label>
-                                    <input type="tel" name="phone" class="form-control form-control-lg" 
-                                           placeholder="081234567890">
+                                    <label class="form-label fw-bold text-success">Mata Pelajaran</label>
+                                        <select name="mapel_id" class="form-select form-control-lg">
+                                            <option value="">Pilih Mata Pelajaran</option>
+                                            @foreach($mapel as $m)
+                                                <option value="{{ $m->id }}">
+                                                    {{ $m->nama_mapel }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                 </div>
                             </div>
 
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success">🔐 Password</label>
+                                    <label class="form-label fw-bold text-success">Password</label>
                                     <input type="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror" required>
                                     @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success">🔗 Konfirmasi Password</label>
+                                    <label class="form-label fw-bold text-success">Konfirmasi Password</label>
                                     <input type="password" name="password_confirmation" class="form-control form-control-lg @error('password_confirmation') is-invalid @enderror" required>
                                 </div>
                             </div>
@@ -155,13 +210,13 @@
                             
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-primary">👦 Nama Lengkap Siswa</label>
+                                    <label class="form-label fw-bold text-primary">Nama Lengkap Siswa</label>
                                     <input type="text" name="nama" class="form-control form-control-lg @error('nama') is-invalid @enderror" 
                                            value="{{ old('nama') }}" placeholder="Contoh: Andi Wijaya" required>
                                     @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-primary">🆔 Username Siswa</label>
+                                    <label class="form-label fw-bold text-primary">Username Siswa</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-primary text-white"><i class="fas fa-user-graduate"></i></span>
                                         <input type="text" name="username" class="form-control form-control-lg @error('username') is-invalid @enderror" 
@@ -173,33 +228,26 @@
 
                             <div class="row">
                                 <div class="col-lg-4 mb-4">
-                                    <label class="form-label fw-bold text-primary">🆔 NIS</label>
-                                    <input type="text" name="nis" class="form-control form-control-lg" 
-                                           placeholder="12345678">
-                                </div>
-                                <div class="col-lg-4 mb-4">
-                                    <label class="form-label fw-bold text-primary">📚 Kelas</label>
-                                    <select name="kelas" class="form-select form-control-lg">
-                                        <option value="">Pilih Kelas</option>
-                                        <option value="7A">7A</option>
-                                        <option value="7B">7B</option>
-                                        <option value="8A">8A</option>
-                                    </select>
-                                </div>
-                                <div class="col-lg-4 mb-4">
-                                    <label class="form-label fw-bold text-primary">📅 Tanggal Lahir</label>
-                                    <input type="date" name="tgl_lahir" class="form-control form-control-lg" max="{{ date('Y-m-d') }}">
+                                    <label class="form-label fw-bold text-primary">Kelas</label>
+                                        <select name="kelas_id" class="form-select form-control-lg">
+                                            <option value="">Pilih Kelas</option>
+                                            @foreach($kelas as $k)
+                                                <option value="{{ $k->id }}">
+                                                    {{ $k->nama_kelas }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                 </div>
                             </div>
 
                             <div class="row">
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-primary">🔐 Password</label>
+                                    <label class="form-label fw-bold text-primary">Password</label>
                                     <input type="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror" required>
                                     @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-primary">🔗 Konfirmasi Password</label>
+                                    <label class="form-label fw-bold text-primary">Konfirmasi Password</label>
                                     <input type="password" name="password_confirmation" class="form-control form-control-lg @error('password_confirmation') is-invalid @enderror" required>
                                 </div>
                             </div>
@@ -207,11 +255,11 @@
                             <!-- Poin & Level Default Siswa -->
                             <div class="row bg-light rounded-3 p-3 mb-4">
                                 <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-success">⭐ Poin Awal</label>
+                                    <label class="form-label fw-bold text-success">Poin Awal</label>
                                     <input type="number" name="total_poin" class="form-control form-control-lg" value="0" min="0" max="1000">
                                 </div>
                                 <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-warning">🎮 Level Awal</label>
+                                    <label class="form-label fw-bold text-warning">Level Awal</label>
                                     <input type="number" name="level" class="form-control form-control-lg" value="1" min="1" max="50">
                                 </div>
                             </div>
@@ -248,4 +296,38 @@
     border-radius: 12px 12px 0 0;
 }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const adminTab = document.getElementById('admin-tab');
+    const guruTab = document.getElementById('guru-tab');
+    const siswaTab = document.getElementById('siswa-tab');
+
+    const adminTools = document.getElementById('admin-tools');
+    const guruTools = document.getElementById('guru-tools');
+    const siswaTools = document.getElementById('siswa-tools');
+
+    function hideAll() {
+        adminTools.classList.add('d-none');
+        guruTools.classList.add('d-none');
+        siswaTools.classList.add('d-none');
+    }
+
+    adminTab.addEventListener('click', function () {
+        hideAll();
+        adminTools.classList.remove('d-none');
+    });
+
+    guruTab.addEventListener('click', function () {
+        hideAll();
+        guruTools.classList.remove('d-none');
+    });
+
+    siswaTab.addEventListener('click', function () {
+        hideAll();
+        siswaTools.classList.remove('d-none');
+    });
+
+});
+</script>
 @endsection

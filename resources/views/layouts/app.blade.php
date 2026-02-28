@@ -155,7 +155,8 @@
                 <a class="nav-link {{ request()->routeIs('siswa.tantangan*') ? 'active' : '' }}" href="{{ route('siswa.tantangan') }}">
                     <i class="fas fa-tasks me-3"></i> Tantangan
                 </a>
-                <a class="nav-link {{ request()->routeIs('siswa.leaderboard') ? 'active' : '' }}" href="{{ route('siswa.leaderboard') }}">
+                <a class="nav-link {{ request()->routeIs('leaderboard*') ? 'active' : '' }}" 
+                href="{{ route('leaderboard') }}">
                     <i class="fas fa-trophy me-3"></i> Leaderboard
                 </a>
                 <a class="nav-link {{ request()->routeIs('siswa.profil') ? 'active' : '' }}" href="{{ route('siswa.profil') }}">
@@ -253,6 +254,25 @@
             @yield('content')
         </div>
     </div>
+
+    {{-- PWA NOTIFICATION --}}
+@if(session('notif_message'))
+<script>
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('{{ session('notif_message') }}', {
+            icon: '/favicon.ico',
+            badge: '/badge.png',
+            body: 'Cek dashboard tantangan sekarang!'
+        });
+    } else if ('Notification' in window && Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                new Notification('{{ session('notif_message') }}');
+            }
+        });
+    }
+</script>
+@endif
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

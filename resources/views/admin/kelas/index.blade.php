@@ -47,7 +47,11 @@
                                     <i class="fas fa-users"></i>
                                 </div>
                                 <div>
-                                    <h5 class="mb-0 fw-bold fs-4">{{ $k->nama_kelas }}</h5>
+                                    <h5 class="mb-0 fw-bold fs-4">
+                                        <a href="{{ route('admin.kelas.show', $k) }}">
+                                            {{ $k->nama_kelas }}
+                                        </a>
+                                    </h5>
                                 </div>
                             </div>
                         </td>

@@ -168,7 +168,7 @@
             <a href="{{ route('siswa.tantangan') }}" class="btn btn-lg btn-success">
                 <i class="fas fa-rocket me-2"></i> Lanjut Tantangan
             </a>
-            <a href="{{ route('siswa.leaderboard') }}" class="btn btn-lg btn-outline-primary ms-2">
+            <a href="{{ route('leaderboard') }}" class="btn btn-lg btn-outline-primary ms-2">
                 <i class="fas fa-trophy me-2"></i> Cek Leaderboard
             </a>
         </div>

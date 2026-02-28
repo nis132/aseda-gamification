@@ -11,7 +11,29 @@
         <i class="fas fa-plus me-2"></i>Tambah User
     </a>
 </div>
+<div class="mb-3">
+    <div class="btn-group" role="group">
+        <a href="{{ route('admin.users.index') }}"
+           class="btn btn-outline-secondary {{ request('role') == null ? 'active' : '' }}">
+            Semua
+        </a>
 
+        <a href="{{ route('admin.users.index', ['role' => 'admin']) }}"
+           class="btn btn-outline-danger {{ request('role') == 'admin' ? 'active' : '' }}">
+            Admin
+        </a>
+
+        <a href="{{ route('admin.users.index', ['role' => 'guru']) }}"
+           class="btn btn-outline-success {{ request('role') == 'guru' ? 'active' : '' }}">
+            Guru
+        </a>
+
+        <a href="{{ route('admin.users.index', ['role' => 'siswa']) }}"
+           class="btn btn-outline-primary {{ request('role') == 'siswa' ? 'active' : '' }}">
+            Siswa
+        </a>
+    </div>
+</div>
 <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -94,16 +116,15 @@
         
         <!-- Pagination -->
         @if($users->hasPages())
-        <div class="card-footer bg-white border-0 py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="text-muted">
-                    Menampilkan {{ $users->firstItem() ?? 0 }} - {{ $users->lastItem() ?? 0 }} dari {{ $users->total() }} user
-                </div>
-                <div>
-                    {{ $users->appends(request()->query())->links() }}
-                </div>
-            </div>
-        </div>
+<div class="d-flex justify-content-between align-items-center">
+    <div class="text-muted small">
+        Menampilkan {{ $users->firstItem() ?? 0 }} - {{ $users->lastItem() ?? 0 }} dari {{ $users->total() }} user
+    </div>
+
+    <div>
+        {{ $users->appends(request()->query())->links('pagination::bootstrap-5') }}
+    </div>
+</div>
         @endif
     </div>
 </div>
