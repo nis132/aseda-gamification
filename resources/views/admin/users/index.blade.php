@@ -43,8 +43,6 @@
                         <th class="border-0">Nama</th>
                         <th class="border-0">Username</th>
                         <th class="border-0">Role</th>
-                        <th class="border-0">Poin</th>
-                        <th class="border-0">Level</th>
                         <th class="border-0 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -68,15 +66,6 @@
                         <td>
                             <span class="badge fs-6 px-3 py-2 fw-semibold bg-{{ $user->role == 'admin' ? 'danger' : ($user->role == 'guru' ? 'success' : 'primary') }}">
                                 {{ ucfirst($user->role) }}
-                            </span>
-                        </td>
-                        <td>
-                            <h5 class="mb-0 fw-bold text-primary">{{ number_format($user->total_poin) }}</h5>
-                            <small class="text-success fw-semibold">+{{ $user->total_poin }} XP</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-warning text-dark px-3 py-2 fs-6 fw-semibold">
-                                <i class="fas fa-level-up-alt me-1"></i>Lv.{{ $user->level }}
                             </span>
                         </td>
                         <td class="text-center">

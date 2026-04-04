@@ -18,9 +18,14 @@ use App\Http\Controllers\Guru\PenilaianController;
 use App\Exports\GuruTemplateExport;
 use App\Exports\SiswaTemplateExport;
 use Maatwebsite\Excel\Facades\Excel;
-
+use App\Http\Controllers\PushNotificationController;
 
 Route::get('/', function () {
+    return view('welcome');
+});
+
+
+Route::get('/login', function () {
     return redirect()->route('login');
 });
 
@@ -146,7 +151,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Tantangan - RESOURCE FULL CRUD
         Route::resource('tantangan', TantanganController::class);
-
+        
         // Soal (nested dengan tantangan)
         Route::resource('tantangan.soal', SoalController::class)->shallow();
         Route::get('/tantangan/{tantangan}/soal/create', [App\Http\Controllers\Guru\SoalController::class, 'create'])->name('soal.create');
@@ -162,6 +167,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/materi/{materi}', [App\Http\Controllers\Guru\MateriController::class, 'destroy'])->name('materi.destroy');
     });
 
+    Route::post('guru/tantangan/{tantangan}/publish', [TantanganController::class, 'publish']);
+    Route::post('guru/tantangan/{tantangan}/unpublish', [TantanganController::class, 'unpublish']);
+
     Route::get('guru/tantangan/{id}/nilai', 
     [PenilaianController::class, 'index'])->name('guru.nilai.index');
 
@@ -171,6 +179,11 @@ Route::post('guru/tantangan/{id}/nilai/{siswa}',
 Route::get('guru/tantangan/{id}/nilai/{siswa}',
     [PenilaianController::class, 'detail'])
     ->name('guru.nilai.detail');
+
+    Route::post(
+    'guru/tantangan/{id}/nilai/{siswa}',
+    [PenilaianController::class, 'simpanNilai']
+)->name('guru.nilai.simpan');
 });
 
 
@@ -199,3 +212,17 @@ Route::match(['POST', 'GET'], '/tantangan/{tantangan}/submit', [SiswaController:
 
 Route::get('/badge', [BadgeController::class, 'index'])
     ->name('badge');
+
+Route::post('/siswa/materi/{materi}/selesai', [SiswaController::class, 'selesai'])
+    ->name('siswa.materi.selesai');
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/notifications/subscribe', [App\Http\Controllers\PushNotificationController::class, 'subscribe']);
+});
+
+Route::post('/siswa/badge/mark-as-seen/{id}', function($id) {
+    \App\Models\SiswaBadge::where('id', $id)
+        ->where('siswa_id', auth()->id())
+        ->update(['is_new' => 0]);
+    return response()->json(['success' => true]);
+})->middleware(['auth']);

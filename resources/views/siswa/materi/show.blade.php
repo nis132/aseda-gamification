@@ -47,11 +47,37 @@
                         <i class="fas fa-book-open me-2"></i>Isi Materi
                     </h3>
                 </div>
-                <div class="card-body p-5">
-                    <div class="materi-content lh-lg">
-                        {!! nl2br(e($materi->deskripsi)) !!}
-                    </div>
-                </div>
+<div class="card-body p-5">
+    <div class="materi-content lh-lg">
+        {!! nl2br(e($materi->deskripsi)) !!}
+    </div>
+
+    {{-- ========================= --}}
+    {{-- TOMBOL SELESAI --}}
+    {{-- ========================= --}}
+    <div class="mt-5">
+
+        @if(session('success'))
+            <div class="alert alert-success shadow-sm">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(!$sudahSelesai)
+            <form action="{{ route('siswa.materi.selesai', $materi->id) }}" method="POST">
+                @csrf
+                <button type="submit" class="btn btn-success btn-lg px-4 shadow">
+                    ✅ Saya Sudah Mempelajari Materi
+                </button>
+            </form>
+        @else
+            <div class="alert alert-success d-flex align-items-center shadow-sm">
+                🎉 <span class="ms-2">Materi sudah kamu selesaikan!</span>
+            </div>
+        @endif
+
+    </div>
+</div>
             </div>
         </div>
 

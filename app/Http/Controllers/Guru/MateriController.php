@@ -87,7 +87,12 @@ public function edit(Materi $materi)
     return view('guru.materi.edit', compact('materi', 'kelas', 'mapel'));
 }
 
+public function show(Materi $materi)
+{
+    $this->authorizeMateri($materi);
 
+    return view('guru.materi.show', compact('materi'));
+}
 
     public function destroy(Materi $materi)
     {

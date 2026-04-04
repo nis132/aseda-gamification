@@ -5,173 +5,193 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
-            <div class="card shadow-lg border-0">
-                <div class="card-header bg-gradient-primary text-white py-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="mb-0"><i class="fas fa-tasks me-2"></i>{{ $tantangan->judul }}</h2>
-                            <p class="mb-0 opacity-75">{{ $tantangan->deskripsi }}</p>
-                            <div class="mt-2">
-                                <span class="badge bg-info fs-6 me-2">{{ $tantangan->mapel->nama_mapel }} - {{ $tantangan->kelas->nama_kelas }}</span>
-                                <span class="badge bg-secondary fs-6 me-2">{{ $tantangan->poin }} Poin</span>
-                                <span class="badge bg-warning fs-6 me-2">{{ $tantangan->status == 'draft' ? 'Draft' : 'Published' }}</span>
+            <div class="card shadow-sm border-0 overflow-hidden">
+                {{-- HEADER DENGAN GRADIENT BARU --}}
+                <div class="card-header bg-primary py-4 text-white">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                        <div class="mb-3 mb-md-0">
+                            <h2 class="fw-bold mb-1"><i class="fas fa-tasks me-2"></i>{{ $tantangan->judul }}</h2>
+                            <p class="mb-0 opacity-75">{{ Str::limit($tantangan->deskripsi, 100) }}</p>
+                            <div class="mt-3">
+                                <span class="badge bg-white text-primary px-3 py-2 me-2">
+                                    <i class="fas fa-book-reader me-1"></i> {{ $tantangan->mapel->nama_mapel }}
+                                </span>
+                                <span class="badge bg-white text-primary px-3 py-2 me-2">
+                                    <i class="fas fa-door-open me-1"></i> Kelas {{ $tantangan->kelas->nama_kelas }}
+                                </span>
+                                <span class="badge {{ $tantangan->status == 'published' ? 'bg-success' : 'bg-warning text-dark' }} px-3 py-2">
+                                    <i class="fas {{ $tantangan->status == 'published' ? 'fa-check-circle' : 'fa-edit' }} me-1"></i>
+                                    {{ ucfirst($tantangan->status) }}
+                                </span>
                             </div>
                         </div>
-{{-- PUBLISH SECTION --}}
-                        <div class="mb-4">
-                            @if($tantangan->status == 'published')
-                                <span class="badge bg-success fs-5 px-3 py-2">
-                                    <i class="fas fa-check-circle me-2"></i>Telah Dipublikasikan
-                                </span>
-                            @elseif($tantangan->soal->count() < 3)
-                                <div class="alert alert-warning mb-0">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Minimal 3 soal untuk publikasikan ({{ $tantangan->soal->count() }}/3)
-                                </div>
-                            @else
-                                {{-- ✅ FORM PUBLISH --}}
-                                <form action="{{ url('guru/tantangan/' . $tantangan->id . '/publish') }}" 
-                                    method="POST" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-lg px-4 shadow" 
-                                            onclick="return confirm('Publikasikan tantangan?')">
-                                        <i class="fas fa-globe me-2"></i>Publikasikan
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
 
+{{-- ACTION BUTTON --}}
+<div>
+    @if($tantangan->status !== 'published')
+        <button type="button" class="btn btn-light btn-lg fw-bold px-4 text-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#publishModal">
+            <i class="fas fa-paper-plane me-2"></i>Publikasikan
+        </button>
+    @else
+        <form action="{{ url('guru/tantangan/' . $tantangan->id . '/unpublish') }}" method="POST" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-danger btn-lg fw-bold px-4 shadow-sm" onclick="return confirm('Tarik kembali tantangan ini dari siswa?')">
+                <i class="fas fa-undo me-2"></i>Unpublish
+            </button>
+        </form>
+    @endif
+</div>
+
+<div class="modal fade" id="publishModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Pilih Kelas Tujuan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url('guru/tantangan/' . $tantangan->id . '/publish') }}" method="POST">
+                @csrf
+                <div class="modal-body py-4">
+                    <p class="text-muted mb-3">Tantangan ini akan dimunculkan pada dashboard siswa di kelas:</p>
+                    <select name="kelas_id" class="form-select form-select-lg border-primary" required>
+                        @foreach(App\Models\Kelas::all() as $k)
+                            <option value="{{ $k->id }}" {{ $tantangan->kelas_id == $k->id ? 'selected' : '' }}>
+                                Kelas {{ $k->nama_kelas }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">Konfirmasi & Publish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
                     </div>
                 </div>
 
-                <div class="card-body p-4">
+                <div class="card-body p-4 bg-light">
+                    {{-- ALERT MESSAGES --}}
                     @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4">
+                        <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show mb-4">
                             <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif
+                    @if(session('error'))
+                        <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show mb-4">
+                            <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
 
-                    {{-- STATS --}}
-                    <div class="row mb-4 g-3">
-                        <div class="col-md-3">
-                            <div class="card bg-primary text-white shadow-sm">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-list fa-2x mb-2 opacity-75"></i>
-                                    <div class="h5 mb-0">{{ $tantangan->soal->count() }}</div>
-                                    <small>Soal</small>
+                    {{-- STATS GRID --}}
+                    <div class="row g-3 mb-5">
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body text-center py-4">
+                                    <div class="text-primary mb-2"><i class="fas fa-file-alt fa-2x"></i></div>
+                                    <h4 class="fw-bold mb-0">{{ $tantangan->soal->count() }}</h4>
+                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Soal</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-info text-white shadow-sm">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-clock fa-2x mb-2 opacity-75"></i>
-                                    <div class="h5 mb-0">{{ $tantangan->batas_waktu->format('d/m H:i') }}</div>
-                                    <small>Batas Waktu</small>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body text-center py-4 text-truncate">
+                                    <div class="text-info mb-2"><i class="fas fa-hourglass-half fa-2x"></i></div>
+                                    <h4 class="fw-bold mb-0" style="font-size: 1.1rem;">{{ $tantangan->batas_waktu->format('d/m H:i') }}</h4>
+                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Deadline</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-warning text-white shadow-sm">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-coins fa-2x mb-2 opacity-75"></i>
-                                    <div class="h5 mb-0">{{ $tantangan->poin }}</div>
-                                    <small>Total Poin</small>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body text-center py-4">
+                                    <div class="text-warning mb-2"><i class="fas fa-star fa-2x"></i></div>
+                                    <h4 class="fw-bold mb-0">{{ $tantangan->poin }}</h4>
+                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Max Poin</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-success text-white shadow-sm">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-users fa-2x mb-2 opacity-75"></i>
-                                    <div class="h5 mb-0">{{ $siswaCount ?? 0 }}</div>
-                                    <small>Siswa</small>
+                        <div class="col-6 col-md-3">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body text-center py-4">
+                                    <div class="text-success mb-2"><i class="fas fa-user-graduate fa-2x"></i></div>
+                                    <h4 class="fw-bold mb-0">{{ $siswaCount ?? 0 }}</h4>
+                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Siswa</small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- DAFTAR SOAL --}}
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="mb-0">
-                            <i class="fas fa-list me-2"></i>Daftar Soal 
-                            <span class="badge bg-primary rounded-pill">{{ $tantangan->soal->count() }}</span>
-                        </h5>
-                        <a href="{{ route('guru.soal.create', $tantangan) }}" class="btn btn-success">
-                            <i class="fas fa-file me-2"></i>Buat Soal Baru
-                        </a>
-                        <a href="{{ route('guru.nilai.index', $tantangan->id) }}" 
-                        class="btn btn-primary">
-                            <i class="fas fa-check-double me-2"></i>Lihat & Nilai Jawaban
-                        </a>
+                    {{-- SECTION DAFTAR SOAL --}}
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center mb-4 gap-3">
+                        <h4 class="fw-bold mb-0 text-dark">
+                            <i class="fas fa-layer-group text-primary me-2"></i>Daftar Pertanyaan
+                        </h4>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('guru.nilai.index', $tantangan->id) }}" class="btn btn-outline-primary fw-bold">
+                                <i class="fas fa-tasks me-2"></i>Nilai Jawaban
+                            </a>
+                            <a href="{{ route('guru.soal.create', $tantangan) }}" class="btn btn-primary fw-bold px-4">
+                                <i class="fas fa-plus-circle me-2"></i>Tambah Soal
+                            </a>
+                        </div>
                     </div>
 
                     @if($tantangan->soal->count() == 0)
-                        <div class="text-center py-5">
-                            <i class="fas fa-feather fa-4x text-muted mb-4 opacity-50"></i>
-                            <h4 class="text-muted mb-3">Belum ada soal</h4>
-                            <p class="text-muted mb-4">Tambahkan minimal 3 soal untuk publikasikan tantangan.</p>
-                            <a href="{{ route('guru.soal.create', $tantangan) }}" class="btn btn-primary btn-lg px-4">
-                                <i class="fas fa-file me-2"></i>Mulai Buat Soal
-                            </a>
+                        <div class="card border-0 shadow-sm py-5 text-center bg-white rounded-4">
+                            <div class="py-4">
+                                <i class="fas fa-file-signature fa-4x text-light mb-3"></i>
+                                <h5 class="text-muted">Belum ada pertanyaan yang dibuat.</h5>
+                                <p class="text-muted px-4">Klik tombol "Tambah Soal" untuk mulai menyusun tantangan ini.</p>
+                            </div>
                         </div>
                     @else
                         <div class="row g-4">
-                            @foreach($tantangan->soal as $soal)
+                            @foreach($tantangan->soal as $index => $soal)
                                 <div class="col-xl-4 col-lg-6">
-                                    <div class="card h-100 shadow-sm border-0 position-relative">
-                                        {{-- HEADER --}}
-                                        <div class="card-header bg-gradient-{{ $soal->tipe == 'pg' ? 'primary' : ($soal->tipe == 'matching' ? 'info' : 'warning') }} text-white py-3">
-                                            <span class="badge rounded-pill px-3 py-2 fs-6">
-                                                <i class="fas fa-{{ $soal->tipe == 'pg' ? 'list-ol' : ($soal->tipe == 'matching' ? 'link' : 'edit') }} me-1"></i>
-                                                {{ strtoupper($soal->tipe) }}
+                                    <div class="card h-100 border-0 shadow-sm hover-lift">
+                                        <div class="p-3 pb-0 d-flex justify-content-between">
+                                            <span class="badge bg-light text-primary border border-primary border-opacity-10 px-3 py-2">
+                                                #{{ $index + 1 }} - {{ strtoupper($soal->tipe) }}
                                             </span>
+                                            <div class="dropdown">
+                                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                                    <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2 text-info"></i>Edit</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form action="{{ route('guru.soal.destroy', [$tantangan, $soal]) }}" method="POST">
+                                                            @csrf @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Hapus soal ini?')">
+                                                                <i class="fas fa-trash me-2"></i>Hapus
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
-
-                                        {{-- BODY --}}
-                                        {{-- PREVIEW SOAL --}}
-<div class="card-body">
-    <h6 class="card-title fw-bold mb-3">{{ Str::limit($soal->pertanyaan, 70) }}</h6>
-    
-    @if($soal->opsi_a)
-        <div class="options-preview small mb-3">
-            <div class="d-flex align-items-center mb-1">
-                <span class="badge bg-light text-dark me-2">A</span>
-                {{ Str::limit($soal->opsi_a, 30) }}
-            </div>
-            @if($soal->opsi_b)
-            <div class="d-flex align-items-center mb-1">
-                <span class="badge bg-light text-dark me-2">B</span>
-                {{ Str::limit($soal->opsi_b, 30) }}
-            </div>
-            @endif
-        </div>
-    @endif
-    
-    <div class="text-muted small fst-italic">
-        Jawaban: <strong>{{ $soal->jawaban_benar }}</strong>
-    </div>
-</div>
-
-
-                                        {{-- FOOTER --}}
-                                        <div class="card-footer bg-transparent pt-0">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted">
-                                                    {{ $soal->created_at->diffForHumans() }}
-                                                </small>
-                                                <div class="btn-group btn-group-sm">
-                                                    <a href="#" class="btn btn-outline-primary btn-sm">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('guru.soal.destroy', [$tantangan, $soal]) }}" method="POST" class="d-inline">
-                                                        @csrf @method('DELETE')
-                                                        <button class="btn btn-outline-danger btn-sm" onclick="return confirm('Hapus soal?')">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
+                                        <div class="card-body">
+                                            <h6 class="fw-bold text-dark mb-3" style="line-height: 1.6;">
+                                                {{ Str::limit($soal->pertanyaan, 100) }}
+                                            </h6>
+                                            
+                                            @if($soal->tipe == 'pg')
+                                                <div class="small text-muted mb-3 bg-light p-2 rounded">
+                                                    <div class="mb-1"><i class="fas fa-check-circle text-success me-1"></i> A: {{ Str::limit($soal->opsi_a, 40) }}</div>
+                                                    <div><i class="fas fa-circle text-light me-1 border rounded-circle"></i> B: {{ Str::limit($soal->opsi_b, 40) }}</div>
                                                 </div>
+                                            @endif
+                                            
+                                            <div class="mt-auto pt-2 border-top">
+                                                <small class="text-muted">Jawaban Benar:</small>
+                                                <div class="fw-bold text-primary">{{ $soal->jawaban_benar }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -185,3 +205,14 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    .hover-lift { transition: all 0.25s ease; }
+    .hover-lift:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,.08) !important; }
+    .bg-primary { background: #667eea !important; }
+    .btn-primary { background-color: #667eea; border-color: #667eea; }
+    .btn-primary:hover { background-color: #5a6fd6; }
+    .card { border-radius: 12px; }
+</style>
+@endpush

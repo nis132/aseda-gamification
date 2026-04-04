@@ -2,11 +2,12 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notifiable; // Perbaiki ini
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 class User extends Authenticatable
 {
-    use Notifiable;  // ✅ GUNAKAN INI
+    use Notifiable, HasPushSubscriptions;
 
     protected $fillable = [
         'nama', 'username', 'password', 'role', 'total_poin', 'level'
@@ -74,5 +75,4 @@ public function kelas()
 {
     return $this->belongsToMany(Kelas::class, 'siswa_kelas', 'siswa_id', 'kelas_id');
 }
-
 }

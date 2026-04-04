@@ -16,7 +16,7 @@
                     <div class="row g-4">
                         <!-- Nama Mapel -->
                         <div class="col-lg-12 mb-4">
-                            <label class="form-label fw-bold fs-5 text-success">📚 Nama Mata Pelajaran <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold fs-5 text-success"> Nama Mata Pelajaran <span class="text-danger">*</span></label>
                             <input type="text" name="nama_mapel" class="form-control form-control-lg @error('nama_mapel') is-invalid @enderror" 
                                    value="{{ old('nama_mapel') }}" placeholder="Contoh: Matematika, IPA, Bahasa Indonesia" required>
                             @error('nama_mapel')
@@ -26,7 +26,7 @@
 
                         <!-- Guru Pengajar -->
                         <div class="col-lg-12 mb-4">
-                            <label class="form-label fw-bold fs-5 text-primary">👨‍🏫 Guru Pengajar</label>
+                            <label class="form-label fw-bold fs-5 text-primary"> Guru Pengajar</label>
                             <select name="guru_id" class="form-select form-control-lg @error('guru_id') is-invalid @enderror">
                                 <option value="">-- Pilih Guru (Opsional) --</option>
                                 @foreach($guru as $g)

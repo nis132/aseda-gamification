@@ -54,7 +54,7 @@
                         <div class="row g-4">
                             {{-- JUDUL --}}
                             <div class="col-12">
-                                <label class="form-label fw-bold fs-5 mb-3">📖 Judul Materi <span class="text-danger">*</span></label>
+                                <label class="form-label fw-bold fs-5 mb-3">Judul Materi <span class="text-danger">*</span></label>
                                 <input type="text" 
                                        name="judul" 
                                        class="form-control form-control-lg @error('judul') is-invalid @enderror" 
@@ -67,7 +67,7 @@
                             </div>
 
                             <div class="col-lg-6">
-                                <label class="form-label fw-bold">📚 Mapel <span class="text-danger">*</span></label>
+                                <label class="form-label fw-bold">Mapel <span class="text-danger">*</span></label>
                                 <select name="mapel_id" class="form-select form-select-lg @error('mapel_id') is-invalid @enderror" required>
                                     <option value="">Pilih Mapel...</option>
                                     @foreach(\App\Models\Mapel::all() as $mapel)
@@ -96,7 +96,7 @@
 
                             {{-- DESKRIPSI --}}
                             <div class="col-12">
-                                <label class="form-label fw-bold fs-5 mb-3">📝 Deskripsi <span class="text-danger">*</span></label>
+                                <label class="form-label fw-bold fs-5 mb-3">Deskripsi <span class="text-danger">*</span></label>
                                 <textarea name="deskripsi" 
                                           rows="5" 
                                           class="form-control form-control-lg @error('deskripsi') is-invalid @enderror" 
@@ -109,7 +109,7 @@
 
                             {{-- FILE MATERI --}}
                             <div class="col-12">
-                                <label class="form-label fw-bold fs-5 mb-3">📎 File Materi (Opsional)</label>
+                                <label class="form-label fw-bold fs-5 mb-3"> File Materi (Opsional)</label>
                                 <div class="border border-dashed border-3 border-secondary rounded-4 p-5 text-center hover-border-primary transition-all">
                                     <input type="file" 
                                            name="file_materi" 

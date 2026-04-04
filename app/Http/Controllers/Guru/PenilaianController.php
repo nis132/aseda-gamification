@@ -23,40 +23,6 @@ class PenilaianController extends Controller
         return view('guru.nilai.index', compact('tantangan','jawaban'));
     }
 
-    public function simpanNilai(Request $request, $id, $siswaId)
-    {
-        $jawaban = JawabanSiswa::where('tantangan_id',$id)
-                    ->where('siswa_id',$siswaId)
-                    ->get();
-
-        $totalNilai = 0;
-
-        foreach ($jawaban as $j) {
-
-            if ($j->dinilai_manual) {
-                $nilaiManual = $request->input('nilai_'.$j->id);
-                $j->update([
-                    'nilai' => $nilaiManual
-                ]);
-                $totalNilai += $nilaiManual;
-            } else {
-                $totalNilai += $j->nilai;
-            }
-        }
-
-        NilaiTantangan::updateOrCreate(
-            [
-                'siswa_id' => $siswaId,
-                'tantangan_id' => $id
-            ],
-            [
-                'total_nilai' => $totalNilai
-            ]
-        );
-
-        return back()->with('success','Nilai berhasil diperbarui');
-    }
-
 public function detail($id, $siswaId)
 {
     $tantangan = Tantangan::with('soal')->findOrFail($id);
@@ -68,5 +34,29 @@ public function detail($id, $siswaId)
 
     $siswa = User::findOrFail($siswaId);
     return view('guru.nilai.detail', compact('tantangan','jawaban','siswa'));
+}
+
+public function simpanNilai(Request $request, $id, $siswaId)
+{
+    $jawaban = JawabanSiswa::where('tantangan_id', $id)
+        ->where('siswa_id', $siswaId)
+        ->get();
+
+    foreach ($jawaban as $j) {
+        
+        if ($j->dinilai_manual) {
+
+            $field = 'nilai_' . $j->id;
+
+            if ($request->has($field)) {
+                $j->nilai = $request->$field;
+                $j->save();
+            }
+        }
+    }
+
+    return redirect()
+        ->route('guru.nilai.detail', [$id, $siswaId])
+        ->with('success', 'Nilai berhasil disimpan!');
 }
 }

@@ -1,149 +1,238 @@
 @extends('layouts.app')
-@section('title','Kerjakan Tantangan - {{ $tantangan->judul }}')
+@section('title','Kerjakan Tantangan - ' . $tantangan->judul)
 
 @section('content')
-<div class="container py-4">
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+    }
+
+    body {
+        background-color: #f3f4f6;
+    }
+
+    .challenge-card {
+        border-radius: 24px;
+        overflow: hidden;
+        border: none;
+    }
+
+    .challenge-header {
+        background: var(--primary-gradient);
+        padding: 3rem 2rem;
+    }
+
+    .question-item {
+        background: var(--glass-bg);
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .question-item:hover {
+        border-color: #a5b4fc;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Radio Button Customization */
+    .option-label {
+        display: block;
+        padding: 1rem 1.25rem;
+        border: 2px solid #f3f4f6;
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .option-label:hover {
+        background-color: #f9fafb;
+        border-color: #e5e7eb;
+    }
+
+    input[type="radio"]:checked + .option-text {
+        color: #4f46e5;
+        font-weight: 600;
+    }
+
+    input[type="radio"]:checked ~ .option-label, 
+    .option-label:has(input[type="radio"]:checked) {
+        border-color: #6366f1;
+        background-color: #eef2ff;
+    }
+
+    /* Matching Interaction */
+    .matching-left-item {
+        cursor: grab;
+        transition: transform 0.2s;
+        border: 2px solid transparent;
+    }
+
+    .matching-left-item:active { cursor: grabbing; }
+    
+    .matching-right-item {
+        transition: all 0.3s ease;
+        border: 2px dashed #d1d5db;
+    }
+
+    .matching-right-item.drag-over {
+        border-color: #6366f1;
+        background-color: #eef2ff;
+        transform: scale(1.02);
+    }
+
+    .matching-right-item.connected {
+        border-style: solid;
+        border-color: #10b981;
+        background-color: #ecfdf5;
+        color: #065f46;
+    }
+
+    .progress {
+        background-color: #e5e7eb;
+        border-radius: 100px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        background: linear-gradient(90deg, #6366f1, #10b981);
+    }
+
+    /* Custom Scrollbar for Textarea */
+    textarea.form-control {
+        border-radius: 12px;
+        border: 2px solid #f3f4f6;
+        padding: 1rem;
+    }
+    
+    textarea.form-control:focus {
+        border-color: #6366f1;
+        box-shadow: none;
+    }
+</style>
+
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-12">
-            <div class="card shadow-lg border-0">
-                <div class="card-header bg-gradient-primary text-white py-4">
-                    <h2 class="mb-2"><i class="fas fa-tasks me-2"></i>{{ $tantangan->judul }}</h2>
-                    <div class="d-flex gap-2">
-                        <span class="badge bg-light text-dark fs-6">{{ $tantangan->mapel->nama_mapel }}</span>
-                        <span class="badge bg-secondary fs-6">{{ $tantangan->kelas->nama_kelas }}</span>
-                        <span class="badge bg-info fs-6">{{ $soals->count() }} Soal</span>
+        <div class="col-lg-10">
+            <div class="card challenge-card shadow-xl">
+                <!-- Header Section -->
+                <div class="challenge-header text-white text-center">
+                    <p class="text-uppercase tracking-widest small fw-bold opacity-75 mb-2">Tantangan Belajar</p>
+                    <h1 class="display-5 fw-bold mb-4">{{ $tantangan->judul }}</h1>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <span class="badge rounded-pill bg-white text-primary px-3 py-2">
+                            <i class="fas fa-book-open me-2"></i>{{ $tantangan->mapel->nama_mapel }}
+                        </span>
+                        <span class="badge rounded-pill bg-white text-dark px-3 py-2 opacity-90">
+                            <i class="fas fa-graduation-cap me-2"></i>{{ $tantangan->kelas->nama_kelas }}
+                        </span>
+                        <span class="badge rounded-pill bg-indigo-200 text-indigo-800 px-3 py-2" style="background: rgba(255,255,255,0.2)">
+                            <i class="fas fa-list-ol me-2"></i>{{ $soals->count() }} Soal
+                        </span>
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('siswa.tantangan.submit', $tantangan) }}" id="tantanganForm">
+                <form method="POST" id="formTantangan" action="{{ route('siswa.tantangan.submit', $tantangan) }}">
                     @csrf
-                    <div class="card-body p-5">
+                    <div class="card-body p-4 p-md-5">
                         @foreach($soals as $index => $soal)
-                        <div class="soal-item mb-5 p-4 border rounded-4 shadow-sm" data-soal-id="{{ $soal->id }}">
-                            <div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom">
-                                <h5 class="fw-bold mb-0">
-                                    <span class="badge bg-primary fs-6 me-3">Soal {{ $index + 1 }}</span>
-                                    {{ $soal->pertanyaan }}
-                                </h5>
-                                <span class="badge bg-info px-3 py-2 fs-6">{{ ucfirst($soal->tipe) }}</span>
-                            </div>
+                            <div class="question-item mb-5 p-4 p-md-5">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 35px; height: 35px;">
+                                        {{ $index + 1 }}
+                                    </span>
+                                    <h4 class="fw-bold mb-0 text-dark">{{ $soal->pertanyaan }}</h4>
+                                </div>
 
-                            {{-- PILIHAN GANDA --}}
-                            @if($soal->tipe === 'pg')
-                            <div class="row g-3">
-                                @if($soal->opsi_a)
-                                <div class="col-md-6">
-                                    <label class="p-3 border rounded-3 d-block hover-effect">
-                                        <input type="radio" name="jawaban[{{ $soal->id }}]" value="A" class="form-check-input me-3">
-                                        <span class="fw-semibold fs-6">A. {{ $soal->opsi_a }}</span>
-                                    </label>
-                                </div>
-                                @endif
-                                @if($soal->opsi_b)
-                                <div class="col-md-6">
-                                    <label class="p-3 border rounded-3 d-block hover-effect">
-                                        <input type="radio" name="jawaban[{{ $soal->id }}]" value="B" class="form-check-input me-3">
-                                        <span class="fw-semibold fs-6">B. {{ $soal->opsi_b }}</span>
-                                    </label>
-                                </div>
-                                @endif
-                                @if($soal->opsi_c)
-                                <div class="col-md-6">
-                                    <label class="p-3 border rounded-3 d-block hover-effect">
-                                        <input type="radio" name="jawaban[{{ $soal->id }}]" value="C" class="form-check-input me-3">
-                                        <span class="fw-semibold fs-6">C. {{ $soal->opsi_c }}</span>
-                                    </label>
-                                </div>
-                                @endif
-                                @if($soal->opsi_d)
-                                <div class="col-md-6">
-                                    <label class="p-3 border rounded-3 d-block hover-effect">
-                                        <input type="radio" name="jawaban[{{ $soal->id }}]" value="D" class="form-check-input me-3">
-                                        <span class="fw-semibold fs-6">D. {{ $soal->opsi_d }}</span>
-                                    </label>
-                                </div>
-                                @endif
-                            </div>
+                                {{-- ============================= --}}
+                                {{-- PILIHAN GANDA --}}
+                                {{-- ============================= --}}
+                                @if($soal->tipe === 'pg')
+                                    <div class="options-container mt-4">
+                                        @foreach(['a','b','c','d'] as $opsi)
+                                            @php $field = "opsi_$opsi"; @endphp
+                                            @if($soal->$field)
+                                                <label class="option-label">
+                                                    <input type="radio" name="jawaban[{{ $soal->id }}]" value="{{ strtoupper($opsi) }}" class="d-none">
+                                                    <span class="option-text">
+                                                        <span class="fw-bold me-2">{{ strtoupper($opsi) }}.</span> 
+                                                        {{ $soal->$field }}
+                                                    </span>
+                                                </label>
+                                            @endif
+                                        @endforeach
+                                    </div>
 
-                            {{-- ESSAY --}}
-                            @elseif($soal->tipe === 'essay')
-                            <div class="row">
-                                <div class="col-12">
-                                    <label class="form-label fw-bold mb-3">Jawaban:</label>
-                                    <textarea name="jawaban[{{ $soal->id }}]" rows="4" class="form-control" required 
-                                              placeholder="Tulis jawaban Anda...">{{ old("jawaban.$soal->id") }}</textarea>
-                                </div>
-                            </div>
+                                {{-- ============================= --}}
+                                {{-- ESSAY --}}
+                                {{-- ============================= --}}
+                                @elseif($soal->tipe === 'essay')
+                                    <div class="mt-3">
+                                        <textarea name="jawaban[{{ $soal->id }}]" rows="4" class="form-control" placeholder="Ketik jawaban lengkap Anda di sini..."></textarea>
+                                    </div>
 
-                            {{-- ✅ MATCHING - TARI GARIS + SHUFFLE KANAN --}}
-                            @elseif($soal->tipe === 'matching')
-                            <div class="matching-container p-4 bg-light rounded-3">
-                                {{-- KIRI (FIXED ORDER) --}}
-                                <div class="row mb-4">
-                                    <div class="col-md-1 text-center fw-bold text-primary fs-6 mb-2">KIRI</div>
-                                    <div class="col-md-5">
-                                        <div class="kiri-items position-relative" id="kiri-{{ $soal->id }}">
-                                            @foreach(json_decode($soal->kiri_items ?? '[]', true) as $index => $item)
-                                            <div class="matching-left-item p-3 mb-2 bg-white border rounded-2 shadow-sm draggable-item cursor-pointer position-relative" 
-                                                 data-left="{{ $index }}" data-soal="{{ $soal->id }}">
-                                                <div class="d-flex align-items-center">
-                                                    <span class="fw-bold text-primary me-3">{{ $index + 1 }}.</span>
-                                                    <span>{{ $item }}</span>
-                                                </div>
+                                {{-- ============================= --}}
+                                {{-- MATCHING --}}
+                                {{-- ============================= --}}
+                                @elseif($soal->tipe === 'matching')
+                                    @php
+                                        $kiri = json_decode($soal->kiri_items ?? '[]', true);
+                                        $kanan = json_decode($soal->kanan_items ?? '[]', true);
+                                        $shuffled = collect($kanan)->shuffle()->values();
+                                    @endphp
+
+                                    <div class="row g-4 mt-2">
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded-4">
+                                                <h6 class="fw-bold text-primary mb-3 text-center">Item Kiri (Tarik Ini)</h6>
+                                                @foreach($kiri as $i => $item)
+                                                    <div class="matching-left-item p-3 mb-2 bg-white shadow-sm border rounded-3 d-flex align-items-center"
+                                                        draggable="true" data-left="{{ $i }}" data-soal="{{ $soal->id }}">
+                                                        <i class="fas fa-grip-vertical me-3 text-muted"></i>
+                                                        {{ $item }}
+                                                    </div>
+                                                @endforeach
                                             </div>
-                                            @endforeach
                                         </div>
-                                    </div>
-                                    <div class="col-md-2 text-center">
-                                        <div class="line-area position-relative" style="height: 300px; border-left: 2px dashed #ccc; border-right: 2px dashed #ccc; padding: 0 10px;">
-                                            <div class="lines-container" id="lines-{{ $soal->id }}"></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-1 text-center fw-bold text-success fs-6 mb-2">KANAN</div>
-                                    <div class="col-md-3">
-                                        {{-- KANAN SHUFFLED --}}
-                                        <div class="kanan-items position-relative" id="kanan-{{ $soal->id }}">
-                                            @php
-                                                $kananOriginal = json_decode($soal->kanan_items ?? '[]', true);
-                                                $shuffledKanan = $kananOriginal ? collect($kananOriginal)->shuffle()->values()->all() : [];
-                                            @endphp
-                                            @foreach($shuffledKanan as $index => $item)
-                                            <div class="matching-right-item p-3 mb-2 bg-white border rounded-2 shadow-sm dropzone-item cursor-pointer position-relative empty" 
-                                                 data-right="{{ array_search($item, $kananOriginal) }}" data-soal="{{ $soal->id }}" data-pos="{{ $index }}">
-                                                <div class="d-flex align-items-center justify-content-between">
-                                                    <span class="fw-bold text-success me-3">{{ $index + 1 }}.</span>
-                                                    <span>{{ $item }}</span>
-                                                </div>
+
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded-4">
+                                                <h6 class="fw-bold text-success mb-3 text-center">Target Kanan (Lepas Di Sini)</h6>
+                                                @foreach($shuffled as $i => $item)
+                                                    <div class="matching-right-item p-3 mb-2 shadow-sm rounded-3 bg-white text-center"
+                                                        data-right="{{ array_search($item, $kanan) }}" data-soal="{{ $soal->id }}">
+                                                        {{ $item }}
+                                                    </div>
+                                                @endforeach
                                             </div>
-                                            @endforeach
                                         </div>
                                     </div>
-                                </div>
 
-                                {{-- PROGRESS --}}
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="progress mb-2" style="height: 8px;">
-                                            <div class="progress-bar" id="progress-{{ $soal->id }}" style="width: 0%"></div>
+                                    <div class="mt-4">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="small fw-bold text-muted">Progres Menghubungkan</span>
+                                            <span class="small fw-bold text-primary" id="status-{{ $soal->id }}">0/{{ count($kiri) }} Pasangan</span>
                                         </div>
-                                        <small id="status-{{ $soal->id }}">Hubungkan {{ count($shuffledKanan) }} pasangan</small>
+                                        <div class="progress" style="height:10px;">
+                                            <div class="progress-bar" id="progress-{{ $soal->id }}" style="width:0%"></div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                {{-- HIDDEN INPUT --}}
-                                <input type="hidden" name="jawaban[{{ $soal->id }}]" id="result-{{ $soal->id }}" value="">
+                                    <div id="result-{{ $soal->id }}"></div>
+                                @endif
                             </div>
-                            @endif
-                        </div>
                         @endforeach
                     </div>
 
-                    <div class="card-footer py-4">
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-success btn-lg px-5">
-                                <i class="fas fa-paper-plane me-2"></i>Submit Jawaban
-                            </button>
-                        </div>
+                    <div class="card-footer bg-light border-0 p-5 text-center">
+                        <button type="button" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow" 
+                            data-bs-toggle="modal" data-bs-target="#modalSubmit">
+                            Selesaikan & Submit <i class="fas fa-paper-plane ms-2"></i>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -151,137 +240,91 @@
     </div>
 </div>
 
-<style>
-.cursor-pointer { cursor: pointer; }
-.hover-effect:hover { 
-    background-color: #f8f9fa !important; 
-    transform: translateY(-1px);
-}
-.draggable-item, .dropzone-item {
-    transition: all 0.3s ease;
-    user-select: none;
-}
-.draggable-item:hover, .dropzone-item:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-.draggable-item.selected {
-    background: linear-gradient(135deg, #007bff, #0056b3) !important;
-    color: white !important;
-}
-.line {
-    position: absolute;
-    height: 3px;
-    background: #007bff;
-    border-radius: 2px;
-    z-index: 10;
-    transition: all 0.5s ease;
-}
-.line.correct { background: #28a745; box-shadow: 0 0 10px rgba(40,167,69,0.5); }
-.line.wrong { background: #dc3545; box-shadow: 0 0 10px rgba(220,53,69,0.5); }
-.dropzone-item.connected { border-color: #007bff; }
-.dropzone-item.correct { background: #d4edda !important; border-color: #28a745; }
-.dropzone-item.wrong { background: #f8d7da !important; border-color: #dc3545; }
-</style>
+{{-- MODAL SUBMIT --}}
+<div class="modal fade" id="modalSubmit" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body p-5 text-center">
+                <div class="text-warning mb-4">
+                    <i class="fas fa-exclamation-circle fa-4x"></i>
+                </div>
+                <h3 class="fw-bold mb-3">Siap Mengirim?</h3>
+                <p class="text-muted">Pastikan semua jawaban telah diperiksa kembali sebelum dikirim ke pengajar.</p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Nanti Dulu</button>
+                    <button class="btn btn-success rounded-pill px-4 fw-bold" id="btnSubmitFinal">Ya, Kirim Sekarang</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let connections = {}; // {soalId: {leftIndex: rightOriginalIndex}}
-    let selectedLeft = null;
+    let dragLeft = null;
+    let dragSoal = null;
 
-    // Matching Logic - Klik kiri → Klik kanan → Garis
-    document.querySelectorAll('.matching-container').forEach(container => {
-        const soalId = container.closest('.soal-item').dataset.soalId;
-        const leftContainer = document.getElementById(`kiri-${soalId}`);
-        const rightContainer = document.getElementById(`kanan-${soalId}`);
-        const linesContainer = document.getElementById(`lines-${soalId}`);
-        const progressBar = document.getElementById(`progress-${soalId}`);
-        const statusText = document.getElementById(`status-${soalId}`);
-        const resultInput = document.getElementById(`result-${soalId}`);
+    // Matching Interaction
+    document.querySelectorAll('.matching-left-item').forEach(left => {
+        left.addEventListener('dragstart', function(e) {
+            dragLeft = this.dataset.left;
+            dragSoal = this.dataset.soal;
+            this.style.opacity = '0.5';
+        });
+        
+        left.addEventListener('dragend', function() {
+            this.style.opacity = '1';
+        });
+    });
 
-        if (!connections[soalId]) connections[soalId] = {};
-
-        // 1. Klik LEFT item → SELECT
-        leftContainer.querySelectorAll('.matching-left-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                const leftIndex = parseInt(this.dataset.left);
-                
-                // Reset previous selection
-                document.querySelectorAll('.matching-left-item.selected').forEach(i => i.classList.remove('selected'));
-                document.querySelectorAll('.line').forEach(line => line.remove());
-                
-                // Select this item
-                this.classList.add('selected');
-                selectedLeft = { element: this, index: leftIndex };
-                statusText.textContent = `Pilih jawaban kanan untuk ${leftIndex + 1}...`;
-            });
+    document.querySelectorAll('.matching-right-item').forEach(right => {
+        right.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
         });
 
-        // 2. Klik RIGHT item → CONNECT
-        rightContainer.querySelectorAll('.matching-right-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                if (selectedLeft) {
-                    const rightOriginalIndex = parseInt(this.dataset.right);
-                    
-                    // Simpan koneksi
-                    connections[soalId][selectedLeft.index] = rightOriginalIndex;
-                    
-                    // Buat garis
-                    createLine(linesContainer, selectedLeft.element, this);
-                    
-                    // Mark connected
-                    this.classList.add('connected');
-                    this.classList.remove('empty');
-                    
-                    // Reset selection
-                    selectedLeft.element.classList.remove('selected');
-                    selectedLeft = null;
-                    
-                    // Update status
-                    updateStatus(soalId);
-                }
-            });
+        right.addEventListener('dragleave', function() {
+            this.classList.remove('drag-over');
         });
 
-        function createLine(linesContainer, leftEl, rightEl) {
-            const leftRect = leftEl.getBoundingClientRect();
-            const rightRect = rightEl.getBoundingClientRect();
-            const containerRect = linesContainer.getBoundingClientRect();
-            
-            const line = document.createElement('div');
-            line.className = 'line';
-            line.style.left = '0px';
-            line.style.top = `${leftRect.top - containerRect.top + leftRect.height/2}px`;
-            line.style.width = `${rightRect.left - containerRect.left}px`;
-            line.style.height = '3px';
-            linesContainer.appendChild(line);
-        }
+        right.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
 
-        function updateStatus(soalId) {
-            const correctPairs = @json(json_decode($soal->matching_pairs ?? '[]'));
-            let correct = 0;
-            let total = correctPairs.length;
+            const rightIndex = this.dataset.right;
+            const soalId = dragSoal;
+            const container = document.getElementById('result-' + soalId);
 
-            // Cek jawaban
-            Object.keys(connections[soalId]).forEach(leftIdx => {
-                const rightIdx = connections[soalId][leftIdx];
-                const correctPair = correctPairs.find(p => p[0] == leftIdx && p[1] == rightIdx);
-                if (correctPair) {
-                    correct++;
-                    // Mark correct line & item
-                    document.querySelectorAll(`#lines-${soalId} .line`)[leftIdx]?.classList.add('correct');
-                    document.querySelectorAll(`#kanan-${soalId} .matching-right-item`)[rightIdx]?.classList.add('correct');
-                } else {
-                    document.querySelectorAll(`#lines-${soalId} .line`)[leftIdx]?.classList.add('wrong');
-                    document.querySelectorAll(`#kanan-${soalId} .matching-right-item`)[rightIdx]?.classList.add('wrong');
-                }
-            });
+            let input = document.querySelector(`input[name="jawaban[${soalId}][${dragLeft}]"]`);
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `jawaban[${soalId}][${dragLeft}]`;
+                container.appendChild(input);
+            }
+            input.value = rightIndex;
 
-            const percentage = (correct / total) * 100;
-            progressBar.style.width = percentage + '%';
-            statusText.textContent = `${correct}/${total} benar (${percentage.toFixed(0)}%)`;
-            
-            resultInput.value = JSON.stringify(connections[soalId]);
-        }
+            // Update Progress & UI
+            const progressBar = document.getElementById('progress-' + soalId);
+            const status = document.getElementById('status-' + soalId);
+            const total = document.querySelectorAll('.matching-left-item[data-soal="' + soalId + '"]').length;
+            const connected = container.querySelectorAll('input').length;
+            const percent = (connected / total) * 100;
+
+            progressBar.style.width = percent + '%';
+            status.textContent = connected + '/' + total + ' Pasangan';
+
+            this.classList.add('connected');
+            this.innerHTML = `<i class="fas fa-check-circle me-2"></i> Terhubung`;
+        });
+    });
+
+    // Final Submit Button
+    document.getElementById('btnSubmitFinal').addEventListener('click', function() {
+        const form = document.getElementById('formTantangan');
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sedang Mengirim...';
+        this.disabled = true;
+        form.submit();
     });
 });
 </script>

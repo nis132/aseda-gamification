@@ -3,316 +3,418 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Gamifikasi SMPN 2 Semen')</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>@yield('title','Gamifikasi SMPN 2 Semen')</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         :root {
             --sidebar-width: 280px;
+            --sidebar-mini-width: 85px;
             --primary-gradient: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            --transition-speed: 0.3s;
         }
-        .sidebar { 
-            min-height: 100vh; 
-            background: var(--primary-gradient);
-            transition: all 0.3s; 
+
+        /* ===== LOADING SCREEN ===== */
+        #pageLoader {
+            position: fixed; inset: 0; background: white;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; flex-direction: column;
+        }
+        .loader-icon { font-size: 60px; color: #667eea; animation: spin 1.4s linear infinite; }
+        @keyframes spin { from {transform: rotate(0)} to {transform: rotate(360deg)} }
+        .fade-out { opacity: 0; transition: opacity .4s; }
+
+        /* ===== SIDEBAR CORE ===== */
+        .sidebar {
             width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--primary-gradient);
+            transition: width var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1), transform var(--transition-speed);
+            z-index: 1050;
+            left: 0; top: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Scrollbar lebih halus & tidak jelek */
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
+        /* Mode Mini (Desktop) */
+        .sidebar.mini { width: var(--sidebar-mini-width); }
+        .sidebar.mini .sidebar-text, 
+        .sidebar.mini .sidebar-header h5,
+        .sidebar.mini .sidebar-header .badge {
+            display: none;
+        }
+        .sidebar.mini .logo-container { width: 50px; height: 50px; margin-right: 0; }
+        .sidebar.mini .sidebar-header { justify-content: center; padding: 1.5rem 0.5rem; }
+
+        /* Header Sidebar */
+        .sidebar-header {
+            padding: 1.5rem 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
         }
 
-        .sidebar::-webkit-scrollbar-track {
-            background: transparent;
+        .logo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
         }
 
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.4);
+        .logo-container {
+            width: 70px; height: 70px;
+            background: white; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all var(--transition-speed);
+            padding: 5px;
+        }
+        .logo-container img { max-width: 100%; height: auto; }
+
+        /* Hamburger Button */
+        .toggle-sidebar-btn {
+            width: 35px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: 0.2s;
+        }
+        .toggle-sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Scrollable Nav Area */
+        .sidebar-nav-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-top: 10px;
+        }
+
+        .sidebar-nav-container::-webkit-scrollbar { width: 4px; }
+        .sidebar-nav-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
             border-radius: 10px;
+            margin: 4px 15px;
+            padding: 12px;
+            display: flex; align-items: center;
+            white-space: nowrap;
+            transition: 0.2s;
         }
-
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: rgba(255,255,255,0.6);
-        }
-        .sidebar .nav-link { 
-            color: rgba(255,255,255,0.9); 
-            border-radius: 12px; 
-            margin: 6px 16px; 
-            padding: 14px 20px;
-            font-weight: 500;
-            position: relative;
-        }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active { 
-            background: rgba(255,255,255,0.25); 
-            color: white; 
-            transform: translateX(8px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .sidebar .nav-link i {
-            width: 20px;
-            transition: all 0.3s ease;
-        }
-        .sidebar .nav-link:hover i {
-            transform: scale(1.2);
-        }
-
-        
-        .main-content { margin-left: var(--sidebar-width); min-height: 100vh; }
-        .navbar-top { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        
-        /* LOGOUT BUTTON STYLING */
-        .logout-section {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.2);
-        }
-        .logout-btn {
-            transition: all 0.3s ease !important;
-            border: 2px solid rgba(255,255,255,0.3) !important;
-            color: rgba(255,255,255,0.95) !important;
-            background: rgba(255,255,255,0.1) !important;
-            font-weight: 600 !important;
-            border-radius: 12px !important;
-            padding: 14px 20px !important;
-            width: 100% !important;
-            text-align: left !important;
-        }
-        .logout-btn:hover:not(:disabled) {
-            background: #dc3545 !important;
-            border-color: #dc3545 !important;
+        .nav-link i { width: 35px; text-align: center; font-size: 1.2rem; flex-shrink: 0; }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
             color: white !important;
-            transform: translateX(8px);
-            box-shadow: 0 4px 15px rgba(220,53,69,0.4);
         }
-        .logout-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+
+        /* ===== LAYOUT CONTENT FIX ===== */
+        .main-content {
+            min-height: 100vh;
+            transition: margin-left var(--transition-speed);
         }
-        
-        @media (max-width: 992px) { 
-            .sidebar { transform: translateX(-100%); }
-            .main-content { margin-left: 0; }
+
+        /* Hanya beri margin jika user login (ada sidebar) */
+        body.is-logged-in .main-content {
+            margin-left: var(--sidebar-width);
+        }
+        body.is-logged-in .main-content.expanded {
+            margin-left: var(--sidebar-mini-width);
+        }
+
+        /* Pusatkan konten secara vertikal & horizontal jika di halaman login (guest) */
+        body.is-guest .main-content {
+            margin-left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); width: var(--sidebar-width) !important; }
             .sidebar.show { transform: translateX(0); }
+            .main-content, body.is-logged-in .main-content { margin-left: 0 !important; }
+            .sidebar-overlay {
+                position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+                display: none; z-index: 1040;
+            }
+            .sidebar-overlay.show { display: block; }
+            .toggle-sidebar-btn { display: none; }
         }
-        .guest-layout { margin-left: 0 !important; }
     </style>
 </head>
-<body class="bg-light">
 
-    {{-- SIDEBAR - DYNAMIC BY ROLE --}}
-    @auth
-    <div class="sidebar position-fixed d-none d-lg-flex flex-column p-4 shadow-lg z-3">
-        <!-- Logo SMPN 2 Semen -->
-        <div class="text-white text-center mb-5 pb-4 border-bottom border-white border-opacity-25">
-            <div class="bg-white bg-opacity-20 rounded-circle mx-auto mb-3 p-4 d-flex align-items-center justify-content-center" style="width: 90px; height: 90px;">
-                <i class="fas fa-graduation-cap fa-2x"></i>
+<body class="bg-light {{ Auth::check() ? 'is-logged-in' : 'is-guest' }}">
+
+<div id="pageLoader">
+    <i class="fas fa-graduation-cap loader-icon"></i>
+    <div class="mt-3 fw-bold text-muted">Memuat Sistem Gamifikasi...</div>
+</div>
+
+@auth
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar position-fixed shadow-lg" id="mainSidebar">
+    
+    <div class="sidebar-header">
+        <div class="logo-section">
+            <div class="logo-container">
+                <img src="{{ asset('storage/logo_aseda.webp') }}" alt="ASEDA">
             </div>
-            <h4 class="mb-1 fw-bold">SMPN 2 Semen</h4>
-            <div class="badge bg-white bg-opacity-30 px-3 py-1 rounded-pill fs-6">
-                {{ ucfirst(auth()->user()->role) }}
-            </div>
+            <h6 class="text-white fw-bold mt-2 mb-0 sidebar-text">SMPN 2 Semen</h6>
         </div>
 
-        <!-- NAVIGATION DYNAMIC -->
-        <nav class="nav flex-column flex-grow-1">
-            
-            {{-- DASHBOARD COMMON --}}
-            <a class="nav-link {{ request()->routeIs('*dashboard*') ? 'active' : '' }}" 
-               href="{{ auth()->user()->role == 'admin' ? route('admin.dashboard') : (auth()->user()->role == 'siswa' ? route('siswa.dashboard') : route('guru.dashboard')) }}">
-                <i class="fas fa-tachometer-alt me-3"></i> Dashboard
+        <div class="toggle-sidebar-btn d-none d-lg-flex" id="desktopToggle">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+
+    <div class="sidebar-nav-container">
+        <nav class="nav flex-column">
+            <div class="badge bg-white bg-opacity-10 mx-3 my-2 sidebar-text py-2 text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">
+                Role: {{ auth()->user()->role }}
+            </div>
+
+            <a class="nav-link {{ request()->routeIs('*dashboard*') ? 'active':'' }}" 
+               href="{{ auth()->user()->role=='admin' ? route('admin.dashboard') : (auth()->user()->role=='siswa' ? route('siswa.dashboard') : route('guru.dashboard')) }}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span class="sidebar-text">Dashboard</span>
             </a>
 
-            {{-- ADMIN MENU - SESUAI PROPOSAL --}}
-            @if(auth()->user()->role == 'admin')
-                <div class="dropdown-divider bg-white bg-opacity-25 my-3"></div>
-                <a class="nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
-                    <i class="fas fa-users me-3"></i> Kelola User
-                </a>
-                <a class="nav-link {{ request()->routeIs('admin.kelas*') ? 'active' : '' }}" href="{{ route('admin.kelas.index') }}">
-                    <i class="fas fa-chalkboard me-3"></i> Kelola Kelas
-                </a>
-                <a class="nav-link {{ request()->routeIs('admin.mapel*') ? 'active' : '' }}" href="{{ route('admin.mapel.index') }}">
-                    <i class="fas fa-book me-3"></i> Mata Pelajaran
-                </a>
-
-            {{-- GURU MENU - SESUAI PROPOSAL --}}
-            @elseif(auth()->user()->role == 'guru')
-                <div class="dropdown-divider bg-success bg-opacity-25 my-3"></div>
-                <a class="nav-link {{ request()->is('guru/materi*') ? 'active' : '' }}" href="/guru/materi">
-                    <i class="fas fa-book-open me-3"></i> Kelola Materi
-                </a>
-                <a class="nav-link {{ request()->is('guru/tantangan*') ? 'active' : '' }}" href="/guru/tantangan">
-                    <i class="fas fa-dice-d20 me-3"></i> Kelola Tantangan
-                </a>
-
-            {{-- SISWA MENU - SESUAI PROPOSAL --}}
+            @if(auth()->user()->role=='admin')
+                <a class="nav-link" href="{{ route('admin.users.index') }}"><i class="fas fa-users"></i> <span class="sidebar-text">Kelola User</span></a>
+                <a class="nav-link" href="{{ route('admin.kelas.index') }}"><i class="fas fa-chalkboard"></i> <span class="sidebar-text">Kelola Kelas</span></a>
+                <a class="nav-link" href="{{ route('admin.mapel.index') }}"><i class="fas fa-book"></i> <span class="sidebar-text">Mata Pelajaran</span></a>
+            @elseif(auth()->user()->role=='guru')
+                <a class="nav-link" href="/guru/materi"><i class="fas fa-book-open"></i> <span class="sidebar-text">Kelola Materi</span></a>
+                <a class="nav-link" href="/guru/tantangan"><i class="fas fa-dice-d20"></i> <span class="sidebar-text">Kelola Tantangan</span></a>
             @else
-                <div class="dropdown-divider bg-white bg-opacity-25 my-3"></div>
-                <a class="nav-link {{ request()->routeIs('siswa.materi*') ? 'active' : '' }}" href="{{ route('siswa.materi') }}">
-                    <i class="fas fa-book me-3"></i> Materi
-                </a>
-                <a class="nav-link {{ request()->routeIs('siswa.tantangan*') ? 'active' : '' }}" href="{{ route('siswa.tantangan') }}">
-                    <i class="fas fa-tasks me-3"></i> Tantangan
-                </a>
-                <a class="nav-link {{ request()->routeIs('leaderboard*') ? 'active' : '' }}" 
-                href="{{ route('leaderboard') }}">
-                    <i class="fas fa-trophy me-3"></i> Leaderboard
-                </a>
-                <a class="nav-link {{ request()->routeIs('siswa.profil') ? 'active' : '' }}" href="{{ route('siswa.profil') }}">
-                    <i class="fas fa-user me-3"></i> Profil
-                </a>
+                <a class="nav-link" href="{{ route('siswa.materi') }}"><i class="fas fa-book"></i> <span class="sidebar-text">Materi</span></a>
+                <a class="nav-link" href="{{ route('siswa.tantangan') }}"><i class="fas fa-tasks"></i> <span class="sidebar-text">Tantangan</span></a>
+                <a class="nav-link" href="{{ route('leaderboard') }}"><i class="fas fa-trophy"></i> <span class="sidebar-text">Leaderboard</span></a>
+                <a class="nav-link" href="{{ route('siswa.profil') }}"><i class="fas fa-user"></i> <span class="sidebar-text">Profil</span></a>
             @endif
         </nav>
-
-        {{-- ========== LOGOUT SECTION - SEMUA ROLE ========= --}}
-        <div class="logout-section">            
-            {{-- LOGOUT FORM - FIX 405 ERROR --}}
-            <form method="POST" action="{{ route('logout') }}" class="logout-form">
-                @csrf
-                <button type="submit" class="logout-btn" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt me-2"></i>
-                    Keluar ({{ ucfirst(auth()->user()->role) }})
-                </button>
-            </form>
-        </div>
     </div>
 
-    <!-- Mobile Toggle -->
-    <button class="btn btn-primary position-fixed p-3 m-3 d-lg-none z-4 rounded-circle shadow-lg" 
-            id="sidebarToggle" style="left: 20px; top: 20px;">
-        <i class="fas fa-bars fs-5"></i>
-    </button>
+    <div class="p-3 border-top border-white border-opacity-10 mt-auto">
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button class="btn btn-link text-white text-decoration-none w-100 p-0 nav-link" style="border:none;">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="sidebar-text">Keluar</span>
+            </button>
+        </form>
+    </div>
+</aside>
+@endauth
+
+<div class="main-content" id="mainContent">
+    @auth
+    <nav class="navbar navbar-light bg-white mb-4 mx-4 mt-4 rounded-4 shadow-sm">
+        <div class="container-fluid">
+            <button class="btn btn-light d-lg-none shadow-sm me-3" id="mobileToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="navbar-nav me-auto">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="#"><i class="fas fa-home text-muted"></i></a></li>
+                    <li class="breadcrumb-item active">@yield('title')</li>
+                </ol>
+            </div>
+            
+            <div class="navbar-nav ms-auto">
+                @isset($level)
+                <span class="badge bg-warning text-dark">Level {{ $level }}</span>
+                @endisset
+            </div>
+        </div>
+    </nav>
     @endauth
 
-    {{-- FLASH MESSAGES --}}
-    <x-alert-messages />
-    {{-- MAIN CONTENT --}}
-    <div class="main-content pt-4 {{ auth()->check() ? '' : 'guest-layout' }}">
-        @auth
-        <!-- Top Navbar -->
-        <nav class="navbar navbar-expand-lg navbar-light navbar-top bg-white mb-4 mx-4 rounded-4 shadow-sm">
-            <div class="container-fluid px-0">
-                <!-- Breadcrumb DYNAMIC -->
-                <div class="navbar-nav me-auto flex-grow-1">
-                    <nav style="--bs-breadcrumb-divider: '>'" aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item">
-                                <a href="{{ auth()->user()->role == 'admin' ? route('admin.dashboard') : (auth()->user()->role == 'siswa' ? route('siswa.dashboard') : route('guru.dashboard')) }}">
-                                    <i class="fas fa-home text-muted"></i>
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item active" aria-current="page">@yield('title')</li>
-                        </ol>
-                    </nav>
-                </div>
+    <div class="container-fluid px-4">
+        @yield('content')
+    </div>
+</div>
 
-                <!-- User Dropdown (NO LOGOUT - ONLY SIDEBAR) -->
-                <div class="navbar-nav ms-auto">
-                    <div class="dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center p-2 text-decoration-none" href="#" role="button" data-bs-toggle="dropdown">
-                            <div class="avatar-sm bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 45px; height: 45px;">
-                                <i class="fas fa-user text-white"></i>
-                            </div>
-                            <div class="d-none d-md-block">
-                                <div class="fw-bold">{{ auth()->user()->nama ?? auth()->user()->name }}</div>
-                                <small class="text-muted text-capitalize">{{ auth()->user()->role }}</small>
-                            </div>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
-                            <li>
-                                <span class="dropdown-item py-2 px-3">
-                                    <strong>{{ auth()->user()->nama ?? auth()->user()->name }}</strong><br>
-                                    <small class="text-muted">{{ auth()->user()->username }}</small>
-                                </span>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">Role: {{ ucfirst(auth()->user()->role) }}</h6></li>
-                        </ul>
-                    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+const sidebar = document.getElementById('mainSidebar');
+const content = document.getElementById('mainContent');
+const desktopToggle = document.getElementById('desktopToggle');
+const mobileToggle = document.getElementById('mobileToggle');
+const overlay = document.getElementById('sidebarOverlay');
+
+desktopToggle?.addEventListener('click', () => {
+    sidebar.classList.toggle('mini');
+    content.classList.toggle('expanded');
+});
+
+mobileToggle?.addEventListener('click', () => {
+    sidebar.classList.add('show');
+    overlay.classList.add('show');
+});
+
+overlay?.addEventListener('click', () => {
+    sidebar.classList.remove('show');
+    overlay.classList.remove('show');
+});
+
+window.addEventListener('load', function(){
+    const loader = document.getElementById("pageLoader");
+    loader.classList.add("fade-out");
+    setTimeout(() => { loader.style.display = "none" }, 400);
+});
+
+// PWA & PUSH NOTIF
+window.addEventListener('load', function() {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+        navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            console.log('ServiceWorker registered');
+            @auth
+                checkAndSubscribe(reg);
+            @endauth
+        }).catch(err => console.error('SW Error:', err));
+    }
+});
+
+async function checkAndSubscribe(registration) {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+        const publicKey = "{{ env('VAPID_PUBLIC_KEY') }}";
+        subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+
+        await sendSubscriptionToBackend(subscription);
+    }
+}
+
+async function sendSubscriptionToBackend(subscription) {
+    await fetch('/notifications/subscribe', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(subscription)
+    });
+    console.log('Push notification enabled.');
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+</script>
+@auth
+    @php
+        // Ambil SEMUA badge baru
+        $newBadges = \App\Models\SiswaBadge::where('siswa_id', auth()->id())
+                    ->where('is_new', 1)
+                    ->with('badge')
+                    ->get();
+    @endphp
+
+    @if($newBadges->count())
+        <style>
+            .badge-overlay-global {
+                position: fixed; 
+                top: 0; left: 0; 
+                width: 100%; height: 100%;
+                background: rgba(0,0,0,0.85); 
+                z-index: 10000;
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                backdrop-filter: blur(8px);
+            }
+            .badge-content-global {
+                text-align: center; 
+                color: white;
+            }
+            .badge-img-new {
+                width: 200px; 
+                height: 200px; 
+                object-fit: contain;
+                filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+            }
+            .text-gold { 
+                color: #ffd700; 
+                font-weight: bold; 
+            }
+        </style>
+
+        @foreach($newBadges as $badgeItem)
+            <div id="globalBadgePopup-{{ $badgeItem->id }}" class="badge-overlay-global">
+                <div class="badge-content-global animate__animated animate__jackInTheBox">
+                    
+                    <h1 class="text-gold display-4 mb-0">SELAMAT!</h1>
+                    <p class="fs-4 mb-4">Kamu mendapatkan badge baru:</p>
+                    
+                    {{-- ✅ FIX VARIABEL + PATH --}}
+                    <img src="{{ asset('storage/badges/' . $badgeItem->badge->icon) }}" 
+                         class="badge-img-new mb-3">
+                    
+                    <h2 class="mb-4">{{ $badgeItem->badge->nama_badge }}</h2>
+                    
+                    <button onclick="closeBadgePopup({{ $badgeItem->id }})" 
+                        class="btn btn-warning btn-lg px-5 rounded-pill fw-bold">
+                        TERIMA KASIH!
+                    </button>
+
                 </div>
             </div>
-        </nav>
-        @endauth
+        @endforeach
 
-        <!-- Content -->
-        <div class="container-fluid px-4">
-            @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show rounded-3 mb-4">
-                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show rounded-3 mb-4">
-                    <i class="fas fa-exclamation-triangle me-2"></i>{{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
-            @yield('content')
-        </div>
-    </div>
-
-    {{-- PWA NOTIFICATION --}}
-@if(session('notif_message'))
-<script>
-    if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('{{ session('notif_message') }}', {
-            icon: '/favicon.ico',
-            badge: '/badge.png',
-            body: 'Cek dashboard tantangan sekarang!'
-        });
-    } else if ('Notification' in window && Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                new Notification('{{ session('notif_message') }}');
-            }
-        });
-    }
-</script>
-@endif
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Mobile Sidebar Toggle
-        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
-            document.querySelector('.sidebar')?.classList.toggle('show');
-        });
-
-        // Close sidebar on outside click (mobile)
-        document.addEventListener('click', function(e) {
-            if (window.innerWidth < 992 && 
-                !e.target.closest('.sidebar') && 
-                !e.target.closest('#sidebarToggle')) {
-                document.querySelector('.sidebar')?.classList.remove('show');
-            }
-        });
-
-        // 🔥 LOGOUT SMOOTH - FIX MACET & 405 ERROR
-        document.addEventListener('DOMContentLoaded', function() {
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const role = this.querySelector('span')?.textContent || '{{ ucfirst(auth()->user()->role ?? "Pengguna") }}';
-                    
-                    if (confirm(`Yakin keluar sebagai ${role}?`)) {
-                        // Loading state
-                        this.disabled = true;
-                        this.innerHTML = `
-                            <i class="fas fa-spinner fa-spin me-2"></i>
-                            <span>Memproses logout...</span>
-                        `;
-                        
-                        // Submit form
-                        this.closest('form').submit();
+        <script>
+            function closeBadgePopup(siswaBadgeId) {
+                fetch(`/siswa/badge/mark-as-seen/${siswaBadgeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json'
                     }
+                }).then(() => {
+                    const overlay = document.getElementById('globalBadgePopup-' + siswaBadgeId);
+                    
+                    overlay.classList.add('animate__animated', 'animate__fadeOut');
+
+                    setTimeout(() => {
+                        overlay.remove();
+                    }, 500);
                 });
             }
-        });
-    </script>
+        </script>
+    @endif
+@endauth
 </body>
 </html>

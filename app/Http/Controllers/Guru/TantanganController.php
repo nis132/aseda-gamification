@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\TantanganBaruNotification;
 
 class TantanganController extends Controller
 {
@@ -81,25 +83,44 @@ public function store(Request $request)
 
 public function publish(Tantangan $tantangan)
 {
-    if ($tantangan->guru_id !== Auth::id()) abort(403);
-    if ($tantangan->soal->count() < 3) {
-        return back()->with('error', 'Minimal 3 soal untuk publish!');
+    if ($tantangan->guru_id !== Auth::id()) {
+        abort(403);
     }
 
-    $tantangan->update(['status' => 'published']);
-    
-    $siswaIds = DB::table('siswa_kelas')
-        ->where('kelas_id', $tantangan->kelas_id)
-        ->pluck('siswa_id');
+    if ($tantangan->soal->count() < 1) {
+        return back()->with('error','Tambahkan minimal 1 soal sebelum mempublikasikan!');
+    }
+
+    $tantangan->update([
+        'status' => 'published'
+    ]);
+
     
 
-    $notifMessage = "Tantangan '{$tantangan->judul}' sudah dipublikasikan!";
-    
+    // LANGSUNG AMBIL SEMUA USER DENGAN ROLE SISWA
+    $listSiswa = User::where('role', 'siswa')->get();
+
+    // DEBUG: Cek di log (storage/logs/laravel.log)
+    \Log::info("Mengirim notifikasi ke " . $listSiswa->count() . " siswa.");
+
+    if ($listSiswa->isNotEmpty()) {
+        Notification::send($listSiswa, new TantanganBaruNotification($tantangan));
+    }
+
     return redirect()->route('guru.tantangan.index')
-        ->with('success', 'Tantangan dipublikasikan!')
-        ->with('notif_message', $notifMessage); // Kirim ke view
+        ->with('success','Tantangan dipublikasikan ke semua siswa!');
 }
 
+public function unpublish(Tantangan $tantangan)
+{
+    if ($tantangan->guru_id !== Auth::id()) { abort(403); }
+
+    $tantangan->update([
+        'status' => 'draft'
+    ]);
+
+    return back()->with('success', 'Tantangan ditarik kembali (menjadi draft).');
+}
 
     public function edit(Tantangan $tantangan)
     {
