@@ -11,13 +11,6 @@
     </a>
 </div>
 
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4">
-    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
-
 <div class="card shadow-lg border-0">
     <div class="card-body p-0">
         <div class="table-responsive">

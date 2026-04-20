@@ -12,109 +12,194 @@ class SoalController extends Controller
 {
     public function index($tantanganId)
     {
-        $tantangan = Tantangan::with(['mapel', 'kelas', 'soal'])->findOrFail($tantanganId);
+        $tantangan = Tantangan::with(['mapel', 'kelas', 'soal'])
+            ->findOrFail($tantanganId);
+
         if ($tantangan->guru_id !== Auth::id()) abort(403);
-        
+
         return view('guru.tantangan.show', compact('tantangan'));
     }
 
     public function create($tantanganId)
     {
-        $tantangan = Tantangan::with('mapel', 'kelas')->findOrFail($tantanganId);
+        $tantangan = Tantangan::with(['mapel', 'kelas'])
+            ->findOrFail($tantanganId);
+
         if ($tantangan->guru_id !== Auth::id()) abort(403);
 
         return view('guru.soal.create', compact('tantangan'));
     }
 
-public function store(Request $request, $tantanganId)
+    public function store(Request $request, $tantanganId)
+    {
+        $tantangan = Tantangan::findOrFail($tantanganId);
+
+        if ($tantangan->guru_id !== Auth::id()) abort(403);
+
+        // ===============================
+        // 🔥 AMBIL DATA JSON DENGAN AMAN
+        // ===============================
+        $soals = json_decode($request->soal_data, true) ?? [];
+
+        // ===============================
+        // VALIDASI: HARUS ADA SOAL
+        // ===============================
+        if (!is_array($soals) || count($soals) === 0) {
+            return back()->withErrors([
+                'soal' => 'Belum ada soal yang ditambahkan'
+            ]);
+        }
+
+        foreach ($soals as $s) {
+
+            // ===============================
+            // BASIC DATA
+            // ===============================
+            if (!isset($s['pertanyaan']) || !isset($s['tipe'])) {
+                continue; // skip data rusak
+            }
+
+            $data = [
+                'tantangan_id' => $tantanganId,
+                'pertanyaan' => $s['pertanyaan'],
+                'tipe' => $s['tipe'],
+            ];
+
+            // ===============================
+            // PG (Pilihan Ganda)
+            // ===============================
+            if ($s['tipe'] === 'pg') {
+
+                $data['opsi_a'] = $s['opsi_a'] ?? null;
+                $data['opsi_b'] = $s['opsi_b'] ?? null;
+                $data['opsi_c'] = $s['opsi_c'] ?? null;
+                $data['opsi_d'] = $s['opsi_d'] ?? null;
+                $data['jawaban_benar'] = $s['jawaban_benar'] ?? null;
+            }
+
+            // ===============================
+            // ESSAY
+            // ===============================
+            if ($s['tipe'] === 'essay') {
+                $data['jawaban_benar'] = $s['jawaban_benar'] ?? null;
+            }
+
+            // ===============================
+            // MATCHING
+            // ===============================
+            if ($s['tipe'] === 'matching') {
+
+                $kiri = $s['kiri_items'] ?? [];
+                $kanan = $s['kanan_items'] ?? [];
+
+                if (!is_array($kiri) || !is_array($kanan)) {
+                    continue;
+                }
+
+                if (count($kiri) < 2 || count($kanan) < 2) {
+                    continue;
+                }
+
+                $pairs = [];
+
+                foreach ($kiri as $i => $val) {
+                    $pairs[] = [
+                        'kiri' => $val,
+                        'kanan' => $kanan[$i] ?? null
+                    ];
+                }
+
+                $data['kiri_items'] = json_encode($kiri);
+                $data['kanan_items'] = json_encode($kanan);
+                $data['matching_pairs'] = json_encode($pairs);
+                $data['matching_count'] = count($kiri);
+                $data['jawaban_benar'] = json_encode($pairs);
+            }
+
+            Soal::create($data);
+        }
+
+        return redirect()
+            ->route('guru.tantangan.show', $tantanganId)
+            ->with('success', 'Soal berhasil disimpan!');
+    }
+public function edit(Tantangan $tantangan, Soal $soal)
 {
-    $tantangan = Tantangan::findOrFail($tantanganId);
     if ($tantangan->guru_id !== Auth::id()) abort(403);
 
-    $request->validate([
-        'pertanyaan' => 'required|string|max:500',
-        'tipe' => 'required|in:pg,essay,matching',
-    ]);
+    return view('guru.soal.edit', compact('tantangan', 'soal'));
+}
 
-    $soalData = [
-        'tantangan_id' => $tantanganId,
+public function update(Request $request, Tantangan $tantangan, Soal $soal)
+{
+    if ($tantangan->guru_id !== Auth::id()) abort(403);
+
+    $data = [
         'pertanyaan' => $request->pertanyaan,
         'tipe' => $request->tipe,
     ];
 
+    // reset semua dulu
+    $data['opsi_a'] = null;
+    $data['opsi_b'] = null;
+    $data['opsi_c'] = null;
+    $data['opsi_d'] = null;
+    $data['kiri_items'] = null;
+    $data['kanan_items'] = null;
+    $data['matching_pairs'] = null;
+    $data['matching_count'] = null;
+    $data['jawaban_benar'] = null;
+
     // ================= PG =================
     if ($request->tipe === 'pg') {
-
-        $request->validate([
-            'opsi_a' => 'required|string|max:255',
-            'opsi_b' => 'required|string|max:255',
-            'jawaban_benar' => 'required|in:A,B,C,D',
-        ]);
-
-        $soalData += [
-            'opsi_a' => $request->opsi_a,
-            'opsi_b' => $request->opsi_b,
-            'opsi_c' => $request->opsi_c,
-            'opsi_d' => $request->opsi_d,
-            'jawaban_benar' => $request->jawaban_benar,
-        ];
+        $data['opsi_a'] = $request->opsi_a;
+        $data['opsi_b'] = $request->opsi_b;
+        $data['opsi_c'] = $request->opsi_c;
+        $data['opsi_d'] = $request->opsi_d;
+        $data['jawaban_benar'] = $request->jawaban_pg;
     }
 
     // ================= ESSAY =================
-    elseif ($request->tipe === 'essay') {
-
-        $request->validate([
-            'jawaban_benar' => 'required|string|max:500'
-        ]);
-
-        $soalData['jawaban_benar'] = $request->jawaban_benar;
+    if ($request->tipe === 'essay') {
+        $data['jawaban_benar'] = $request->jawaban_essay;
     }
 
     // ================= MATCHING =================
-    elseif ($request->tipe === 'matching') {
+    if ($request->tipe === 'matching') {
 
-        $kiri = [];
-        $kanan = [];
+        $kiri = explode(',', $request->kiri);
+        $kanan = explode(',', $request->kanan);
+
         $pairs = [];
 
-        for ($i = 1; $i <= 6; $i++) {
-            if ($request->filled("kiri_$i")) {
-
-                $kiri[] = $request->input("kiri_$i");
-                $kanan[] = $request->input("kanan_$i");
-                $pairs[] = [count($kiri)-1, count($kiri)-1];
-            }
+        foreach ($kiri as $i => $val) {
+            $pairs[] = [
+                'kiri' => trim($val),
+                'kanan' => trim($kanan[$i] ?? '')
+            ];
         }
 
-        if (count($kiri) < 2) {
-            return back()->withErrors([
-                'kiri_1' => 'Minimal 2 pasangan!'
-            ])->withInput();
-        }
-
-        $soalData += [
-            'kiri_items' => json_encode($kiri),
-            'kanan_items' => json_encode($kanan),
-            'matching_pairs' => json_encode($pairs),
-            'matching_count' => count($kiri),
-            'jawaban_benar' => json_encode($pairs),
-        ];
+        $data['kiri_items'] = json_encode($kiri);
+        $data['kanan_items'] = json_encode($kanan);
+        $data['matching_pairs'] = json_encode($pairs);
+        $data['matching_count'] = count($kiri);
+        $data['jawaban_benar'] = json_encode($pairs);
     }
 
-    Soal::create($soalData);
+    // 🔥 INI YANG SERING KELEWAT
+    $soal->update($data);
 
-    return $request->filled('tambah_lagi')
-        ? redirect()->route('guru.soal.create', $tantangan)
-        : redirect()->route('guru.tantangan.show', $tantangan)
-            ->with('success', 'Soal berhasil ditambahkan!');
+    return redirect()
+        ->route('guru.tantangan.show', $tantangan)
+        ->with('success', 'Soal berhasil diupdate!');
 }
-    public function destroy($tantanganId, Soal $soal)
+
+    public function destroy(Tantangan $tantangan, Soal $soal)
     {
-        $tantangan = Tantangan::findOrFail($tantanganId);
         if ($tantangan->guru_id !== Auth::id()) abort(403);
 
         $soal->delete();
 
-        return back()->with('success', '✅ Soal dihapus!');
+        return back()->with('success', 'Soal berhasil dihapus!');
     }
 }

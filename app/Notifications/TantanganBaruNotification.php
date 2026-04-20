@@ -29,7 +29,6 @@ public function toWebPush($notifiable, $notification)
         ->title('Tantangan Baru Tersedia!')
         ->icon('/storage/logo_aseda.webp')
         ->body("Ayo kerjakan tantangan: {$this->tantangan->judul}")
-        // Data ini yang nanti dibaca oleh sw.js
         ->data(['url' => route('siswa.tantangan', $this->tantangan->id)]);
 }
 }

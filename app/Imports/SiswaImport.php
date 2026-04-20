@@ -3,30 +3,42 @@
 namespace App\Imports;
 
 use App\Models\User;
-use App\Models\Kelas;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use App\Models\Kelas;
 
-class SiswaImport implements ToModel, WithHeadingRow, WithValidation
+class SiswaImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows
 {
     public function model(array $row)
     {
+        if (
+            empty($row['nama']) &&
+            empty($row['username']) &&
+            empty($row['password'])
+        ) {
+            return null;
+        }
+
+        $kelasNama = trim(strtolower($row['kelas']));
+        $kelas = \App\Models\Kelas::whereRaw('LOWER(nama_kelas) = ?', [$kelasNama])->first();
+
+        if (!$kelas) {
+            throw new \Exception("Kelas '{$row['kelas']}' tidak ditemukan");
+        }
+
         $user = User::create([
-            'nama' => $row['nama'],
-            'username' => $row['username'],
-            'password' => Hash::make($row['password']),
-            'role' => 'siswa',
-            'total_poin' => 0,
-            'level' => 1,
+            'nama'       => $row['nama'],
+            'username'   => $row['username'],
+            'password'   => Hash::make($row['password']),
+            'role'       => 'siswa',
+            'total_poin' => $row['total_poin'] ?? 0,
+            'level'      => $row['level'] ?? 1,
         ]);
 
-        $kelas = Kelas::where('nama_kelas', $row['kelas'])->first();
-
-        if ($kelas) {
-            $user->kelas()->attach($kelas->id);
-        }
+        $user->kelas()->attach($kelas->id);
 
         return $user;
     }
@@ -34,10 +46,10 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'nama' => 'required',
+            'nama'     => 'required',
             'username' => 'required|unique:users,username',
             'password' => 'required|min:6',
-            'kelas' => 'required'
+            'kelas' => 'required',
         ];
     }
 }

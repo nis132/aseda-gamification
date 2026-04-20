@@ -57,7 +57,7 @@ public function nilaiTantangan()
     return $this->hasMany(NilaiTantangan::class, 'siswa_id');
 }
 
-// Tambah methods ini di User model
+
 public function kelasIds()
 {
     return SiswaKelas::where('siswa_id', $this->id)->pluck('kelas_id');

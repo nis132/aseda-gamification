@@ -26,7 +26,6 @@ self.addEventListener('push', function (event) {
         }
     };
 
-    // Baris ini yang sering bikin error kalau options-nya bermasalah
     event.waitUntil(
         self.registration.showNotification(title, options)
     );

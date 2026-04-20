@@ -9,6 +9,7 @@ use App\Models\Badge;
 use App\Models\NilaiTantangan;
 use App\Models\Tantangan;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class BadgeController extends Controller
 {
@@ -37,66 +38,104 @@ class BadgeController extends Controller
         $tantangan = Tantangan::find($tantanganId);
         if (!$tantangan) return;
 
-        // --- 1. LOGIKA: BADGE CAPAIAN TANTANGAN (Nilai >= 80) ---
-        $nilaiRecord = NilaiTantangan::where('siswa_id', $siswaId)
+        $mapelId = $tantangan->mapel_id;
+
+        // =========================
+        // 1. BADGE CAPAIAN (>=80)
+        // =========================
+        $nilai = NilaiTantangan::where('siswa_id', $siswaId)
             ->where('tantangan_id', $tantanganId)
             ->first();
 
-        if ($nilaiRecord && $nilaiRecord->total_nilai >= 80) {
-            self::assignBadge($siswaId, 'Badge Capaian Tantangan', $tantanganId);
+        if ($nilai && $nilai->total_nilai >= 80) {
+            self::assignBadge($siswaId, 'capaian', $tantanganId);
         }
 
-        // --- 2. LOGIKA: BADGE KEAKTIFAN (3x Berturut-turut Tepat Waktu) ---
-        $mapelId = $tantangan->mapel_id;
-        
-        // Ambil 3 pengerjaan terakhir pada mapel yang sama
+        // =========================
+        // 2. BADGE KEAKTIFAN (3x berturut-turut tepat waktu)
+        // =========================
         $riwayat = NilaiTantangan::where('siswa_id', $siswaId)
-            ->whereHas('tantangan', function($q) use ($mapelId) {
+            ->whereHas('tantangan', function ($q) use ($mapelId) {
                 $q->where('mapel_id', $mapelId);
             })
             ->with('tantangan')
-            ->latest('waktu_submit')
-            ->take(3)
+            ->orderBy('waktu_submit', 'desc')
             ->get();
 
-        if ($riwayat->count() == 3) {
-            $isTepatWaktu = true;
-            foreach ($riwayat as $item) {
-                // Jika waktu submit lebih besar dari batas waktu, maka telat
-                if (Carbon::parse($item->waktu_submit)->gt(Carbon::parse($item->tantangan->batas_waktu))) {
-                    $isTepatWaktu = false;
-                    break;
-                }
+        $count = 0;
+
+        foreach ($riwayat as $item) {
+
+            if (
+                $item->waktu_submit &&
+                $item->tantangan->batas_waktu &&
+                Carbon::parse($item->waktu_submit)
+                    ->lte(Carbon::parse($item->tantangan->batas_waktu))
+            ) {
+                $count++;
+            } else {
+                break;
             }
 
-            if ($isTepatWaktu) {
-                self::assignBadge($siswaId, 'Badge Keaktifan', $tantanganId);
+            if ($count >= 3) {
+                self::assignBadge($siswaId, 'keaktifan', $tantanganId);
+                break;
             }
         }
+
+        // =========================
+        // 3. LEVEL SYSTEM
+        // =========================
+        $totalMateri = DB::table('materi_selesai')
+            ->join('materi', 'materi_selesai.materi_id', '=', 'materi.id')
+            ->where('materi_selesai.siswa_id', $siswaId)
+            ->where('materi.mapel_id', $mapelId)
+            ->count();
+
+        $totalTantangan = NilaiTantangan::where('siswa_id', $siswaId)
+            ->whereHas('tantangan', function ($q) use ($mapelId) {
+                $q->where('mapel_id', $mapelId);
+            })
+            ->count();
+
+        $level = 1;
+
+        if ($totalMateri >= 12 && $totalTantangan >= 12) {
+            $level = 5;
+        } elseif ($totalMateri >= 9 && $totalTantangan >= 9) {
+            $level = 4;
+        } elseif ($totalMateri >= 6 && $totalTantangan >= 6) {
+            $level = 3;
+        } elseif ($totalMateri >= 3 && $totalTantangan >= 3) {
+            $level = 2;
+        }
+
+        DB::table('users')
+            ->where('id', $siswaId)
+            ->update(['level' => $level]);
     }
 
     /**
      * Simpan badge ke user jika belum punya untuk tantangan tersebut
      */
-    private static function assignBadge($siswaId, $namaBadge, $tantanganId)
-    {
-        $badge = Badge::where('nama_badge', $namaBadge)->first();
-        
-        if ($badge) {
-            // Cek agar tidak duplikat untuk tantangan yang sama
-            $exists = SiswaBadge::where('siswa_id', $siswaId)
-                ->where('badge_id', $badge->id)
-                ->where('tantangan_id', $tantanganId)
-                ->exists();
+private static function assignBadge($siswaId, $namaBadge, $tantanganId)
+{
+    $badge = Badge::where('nama_badge', $namaBadge)->first();
 
-            if (!$exists) {
-                SiswaBadge::create([
-                    'siswa_id' => $siswaId,
-                    'badge_id' => $badge->id,
-                    'tantangan_id' => $tantanganId,
-                    'is_new' => true
-                ]);
-            }
-        }
+    if (!$badge) return;
+
+    $exists = SiswaBadge::where('siswa_id', $siswaId)
+        ->where('badge_id', $badge->id)
+        ->where('tantangan_id', $tantanganId)
+        ->exists();
+
+    if (!$exists) {
+        SiswaBadge::create([
+            'siswa_id' => $siswaId,
+            'badge_id' => $badge->id,
+            'tantangan_id' => $tantanganId,
+            'is_new' => true
+        ]);
     }
+}
 }

@@ -3,25 +3,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Mapel;
-use App\Models\User;  // ✅ TAMBAH INI
+use App\Models\User; 
 use Illuminate\Http\Request;
 
 class MapelController extends Controller
 {
-    // KODE LAMA TETAP - TIDAK DIHAPUS
     public function index(Request $request)
     {
         if (!auth()->user()->isAdmin()) {
             abort(403);
         }
 
-        // ✅ UPDATE: Load guru count + semua guru untuk dropdown
-        $mapel = Mapel::withCount('guru')  // Hitung guru per mapel
+        $mapel = Mapel::withCount('guru')
             ->when($request->search, function($q) use ($request) {
                 $q->where('nama_mapel', 'like', '%' . $request->search . '%');
             })->paginate(15);
 
-        $guru = User::where('role', 'guru')->get();  // Semua guru untuk assign
+        $guru = User::where('role', 'guru')->get();
         
         return view('admin.mapel.index', compact('mapel', 'guru'));
     }
@@ -32,7 +30,6 @@ public function create()
         abort(403);
     }
     
-    // ✅ PASS GURU LIST ke form create
     $guru = User::where('role', 'guru')->get(['id', 'nama']);
     return view('admin.mapel.create', compact('guru'));
 }
@@ -45,10 +42,9 @@ public function store(Request $request)
 
     $request->validate([
         'nama_mapel' => 'required|string|max:100|unique:mapel,nama_mapel',
-        'guru_id' => 'nullable|exists:users,id'  // ✅ Guru opsional
+        'guru_id' => 'nullable|exists:users,id'
     ]);
 
-    // ✅ CREATE MAPEL + ASSIGN GURU SEKALIGUS
     $mapel = Mapel::create($request->only('nama_mapel'));
     
     if ($request->filled('guru_id')) {
@@ -74,7 +70,10 @@ public function store(Request $request)
         if (!auth()->user()->isAdmin()) {
             abort(403);
         }
-        return view('admin.mapel.edit', compact('mapel'));
+
+        $guru = User::where('role', 'guru')->get(['id', 'nama']);
+
+        return view('admin.mapel.edit', compact('mapel', 'guru'));
     }
 
     public function update(Request $request, Mapel $mapel)
@@ -84,10 +83,16 @@ public function store(Request $request)
         }
 
         $request->validate([
-            'nama_mapel' => 'required|string|max:100|unique:mapel,nama_mapel,' . $mapel->id
+            'nama_mapel' => 'required|string|max:100|unique:mapel,nama_mapel,' . $mapel->id,
+            'guru_id' => 'nullable|array',
+            'guru_id.*' => 'exists:users,id',
         ]);
 
-        $mapel->update($request->only('nama_mapel'));
+        $mapel->update([
+            'nama_mapel' => $request->nama_mapel
+        ]);
+
+        $mapel->guru()->sync($request->guru_id ?? []);
 
         return redirect()->route('admin.mapel.index')
             ->with('success', 'Mata pelajaran ' . $request->nama_mapel . ' berhasil diupdate!');
@@ -107,7 +112,6 @@ public function store(Request $request)
         return back()->with('success', 'Mata pelajaran ' . $nama . ' berhasil dihapus!');
     }
 
-    // ✅ METHOD BARU: Assign Guru ke Mapel
     public function assignGuru(Request $request, Mapel $mapel)
     {
         if (!auth()->user()->isAdmin()) {

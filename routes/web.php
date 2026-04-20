@@ -24,7 +24,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-
 Route::get('/login', function () {
     return redirect()->route('login');
 });
@@ -35,7 +34,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login']);
 });
 
-// 🔥 DUAL LOGOUT ROUTE - FIX 405 ERROR SELAMANYA
 Route::middleware('auth')->group(function () {
 
     // POST logout (untuk form)
@@ -66,9 +64,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         [UserController::class, 'exportTemplate']
     )->name('users.export-template');
 
-    Route::post('/users/import', 
-        [UserController::class, 'import']
-    )->name('users.import');
+    Route::post('/import-admin', [UserController::class, 'importAdmin'])->name('admin.import.admin');
+    Route::post('/admin/import-guru', 
+        [UserController::class, 'importGuru']
+    )->name('admin.import.guru');
+
+    Route::post('/admin/import-siswa', 
+        [UserController::class, 'importSiswa']
+    )->name('admin.import.siswa');
 
     Route::resource('users', UserController::class);
 
@@ -133,15 +136,24 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/tantangan/{tantangan}', [App\Http\Controllers\Guru\TantanganController::class, 'update'])->name('tantangan.update');
         Route::delete('/tantangan/{tantangan}', [App\Http\Controllers\Guru\TantanganController::class, 'destroy'])->name('tantangan.destroy');
 
-        // ✅ SOAL ROUTES - TAMBAH INI
         Route::get('/tantangan/{tantangan}/soal/create', [App\Http\Controllers\Guru\SoalController::class, 'create'])->name('soal.create');
         Route::post('/tantangan/{tantangan}/soal', [App\Http\Controllers\Guru\SoalController::class, 'store'])->name('soal.store');
-        Route::delete('/soal/{soal}', [App\Http\Controllers\Guru\SoalController::class, 'destroy'])->name('soal.destroy');
 
         Route::post('guru/tantangan/{tantangan}/soal', [SoalController::class, 'store'])->name('guru.soal.store');
         Route::get('guru/tantangan/{tantangan}/soal/create', [SoalController::class, 'create'])->name('guru.soal.create');
         Route::post('tantangan/{tantangan}/soal', [SoalController::class, 'store'])->name('soal.store');
         Route::post('tantangan/{tantangan}/publish', [TantanganController::class, 'publish']);
+
+            // 🔥 EDIT
+    Route::get('/tantangan/{tantangan}/soal/{soal}/edit', [SoalController::class, 'edit'])->name('soal.edit');
+
+    // 🔥 UPDATE
+    Route::put('/tantangan/{tantangan}/soal/{soal}', [SoalController::class, 'update'])->name('soal.update');
+
+        Route::delete('/tantangan/{tantangan}/soal/{soal}', 
+        [SoalController::class, 'destroy']
+    )->name('soal.destroy');
+
 
         // Kelas
         Route::resource('kelas', KelasController::class)->only(['index', 'show']);
@@ -158,7 +170,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/tantangan/{tantangan}/soal', [App\Http\Controllers\Guru\SoalController::class, 'store'])->name('soal.store');
         Route::get('/tantangan/{tantangan}/soal/{soal}/edit', [App\Http\Controllers\Guru\SoalController::class, 'edit'])->name('soal.edit');
         Route::put('/tantangan/{tantangan}/soal/{soal}', [App\Http\Controllers\Guru\SoalController::class, 'update'])->name('soal.update');
-        Route::delete('/soal/{soal}', [App\Http\Controllers\Guru\SoalController::class, 'destroy'])->name('soal.destroy');
     Route::get('/materi', [App\Http\Controllers\Guru\MateriController::class, 'index'])->name('materi');
     Route::get('/materi/create', [App\Http\Controllers\Guru\MateriController::class, 'create'])->name('materi.create');
     Route::post('/materi', [App\Http\Controllers\Guru\MateriController::class, 'store'])->name('materi.store');
@@ -184,6 +195,8 @@ Route::get('guru/tantangan/{id}/nilai/{siswa}',
     'guru/tantangan/{id}/nilai/{siswa}',
     [PenilaianController::class, 'simpanNilai']
 )->name('guru.nilai.simpan');
+
+
 });
 
 
@@ -197,7 +210,6 @@ Route::middleware(['auth', 'role:siswa'])
         Route::get('/materi', [SiswaController::class, 'materi'])->name('materi');
         Route::get('/tantangan', [SiswaController::class, 'tantangan'])->name('tantangan');
         Route::get('/tantangan/{tantangan}/kerjakan', [SiswaController::class, 'kerjakan'])->name('tantangan.kerjakan');
-            // 🔥 FIX 405: GET fallback untuk direct access
 
 Route::match(['POST', 'GET'], '/tantangan/{tantangan}/submit', [SiswaController::class, 'submit'])->name('tantangan.submit');        
         Route::get('/profil', [SiswaController::class, 'profil'])->name('profil');
@@ -226,3 +238,12 @@ Route::post('/siswa/badge/mark-as-seen/{id}', function($id) {
         ->update(['is_new' => 0]);
     return response()->json(['success' => true]);
 })->middleware(['auth']);
+
+Route::get('/siswa/tantangan/{tantangan}/hasil', 
+    [SiswaController::class, 'hasil']
+)->name('siswa.tantangan.hasil');
+
+Route::get('/siswa/tantangan/{tantangan}/review', 
+    [SiswaController::class, 'review']
+)->name('siswa.tantangan.review');
+

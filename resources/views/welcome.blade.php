@@ -5,66 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASEDA Generation</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
+
     <style>
-        body, html {
+        body {
             margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .hero-video {
-            position: relative;
             height: 100vh;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .overlay {
-            position: absolute;
-            top:0;
-            left:0;
-            width:100%;
-            height:100%;
-            background: rgba(0,0,0,0.3);
-        }
-
-        .btn-masuk {
-            position: absolute;
-            bottom: 50px;
-            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
             text-align: center;
+        }
+
+        .loader {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
-<div class="hero-video">
-    <video autoplay muted playsinline id="introVideo">
-        <source src="{{ asset('video/aseda.mp4') }}" type="video/mp4">
-    </video>
+<div>
+    <h1 class="fw-bold">ASEDA Generation</h1>
+    <p class="mb-3">Memuat halaman...</p>
 
-    <div class="overlay"></div>
-
-    <div class="btn-masuk">
-        <a href="{{ route('login') }}" class="btn btn-light px-4 py-2">
-            Masuk
-        </a>
-    </div>
+    <div class="spinner-border text-light loader" role="status"></div>
 </div>
 
 <script>
-    // Auto redirect setelah video selesai
-    const video = document.getElementById('introVideo');
-
-    video.onended = function() {
+    // Redirect sekali saja setelah 2 detik
+    setTimeout(function() {
         window.location.href = "{{ route('login') }}";
-    }
+    }, 2000);
 </script>
 
 </body>

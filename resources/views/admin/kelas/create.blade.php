@@ -3,33 +3,70 @@
 @section('title', 'Tambah Kelas')
 
 @section('content')
-<div class="row justify-content-center">
-    <div class="col-lg-6">
-        <div class="card shadow-lg border-0">
-            <div class="card-header bg-primary text-white py-4">
-                <h3 class="mb-0"><i class="fas fa-plus me-2"></i>Tambah Kelas</h3>
-            </div>
-            <form method="POST" action="{{ route('admin.kelas.store') }}">
-                @csrf
-                <div class="card-body p-5">
-                    <div class="mb-4">
-                        <label class="form-label fw-bold fs-5">Nama Kelas</label>
-                        <input type="text" name="nama_kelas" class="form-control form-control-lg @error('nama_kelas') is-invalid @enderror" 
-                               value="{{ old('nama_kelas') }}" placeholder="Contoh: 7A, 8B, 9C" required>
+<div class="container-fluid py-4">
+
+    <div class="card border-0 shadow-sm">
+
+        {{-- HEADER --}}
+        <div class="card-header bg-primary text-white py-3 d-flex align-items-center">
+            <h5 class="mb-0 fw-bold">
+                <i class="fas fa-plus me-2"></i>Tambah Kelas
+            </h5>
+        </div>
+
+        {{-- FORM --}}
+        <form method="POST" action="{{ route('admin.kelas.store') }}">
+            @csrf
+
+            <div class="card-body p-4">
+
+                <div class="row g-3">
+
+                    {{-- NAMA KELAS --}}
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            Nama Kelas
+                        </label>
+
+                        <input type="text"
+                               name="nama_kelas"
+                               class="form-control @error('nama_kelas') is-invalid @enderror"
+                               value="{{ old('nama_kelas') }}"
+                               placeholder="Contoh: 7A, 8B"
+                               required>
+
                         @error('nama_kelas')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        <div class="form-text">Masukkan nama kelas seperti 7A, 8B, 9C (maksimal 10 karakter)</div>
+
+                        <small class="text-muted">
+                            Format: 7A, 8B, 9C (maks. 10 karakter)
+                        </small>
                     </div>
+
                 </div>
-                <div class="card-footer bg-transparent border-0 py-4">
-                    <div class="d-flex justify-content-end gap-3">
-                        <a href="{{ route('admin.kelas.index') }}" class="btn btn-outline-secondary btn-lg">Batal</a>
-                        <button type="submit" class="btn btn-primary btn-lg px-5">Simpan Kelas</button>
-                    </div>
+
+            </div>
+
+            {{-- FOOTER --}}
+            <div class="card-footer bg-white border-0 py-3">
+                <div class="d-flex justify-content-end gap-2">
+
+                    <a href="{{ route('admin.kelas.index') }}"
+                       class="btn btn-light border">
+                        Batal
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-primary px-4">
+                        <i class="fas fa-save me-1"></i> Simpan
+                    </button>
+
                 </div>
-            </form>
-        </div>
+            </div>
+
+        </form>
     </div>
+
 </div>
 @endsection

@@ -11,8 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Notification;
 use App\Notifications\TantanganBaruNotification;
+// use Illuminate\Support\Facades\Notification; // ❌ DIHAPUS
+// use App\Notifications\TantanganBaruNotification; // ❌ DIHAPUS
 
 class TantanganController extends Controller
 {
@@ -27,45 +28,45 @@ class TantanganController extends Controller
         return view('guru.tantangan.index', compact('tantangan'));
     }
 
-public function create()
-{
-    $kelas = Kelas::select('id', 'nama_kelas')->get();
-    return view('guru.tantangan.create', compact('kelas'));
-}
-
-public function store(Request $request)
-{
-    $request->validate([
-        'judul' => 'required|max:255',
-        'deskripsi' => 'required',
-        'kelas_id' => 'required|exists:kelas,id',
-        'batas_waktu' => 'required|date|after:now',
-        'poin' => 'required|integer|min:1|max:1000',
-    ]);
-
-    $guru = Auth::user();
-
-    // ambil mapel pertama guru
-    $mapel = $guru->mapel()->first();
-
-    if (!$mapel) {
-        return back()->withErrors(['mapel' => 'Guru belum memiliki mapel!']);
+    public function create()
+    {
+        $kelas = Kelas::select('id', 'nama_kelas')->get();
+        return view('guru.tantangan.create', compact('kelas'));
     }
 
-    $tantangan = Tantangan::create([
-        'judul' => $request->judul,
-        'deskripsi' => $request->deskripsi,
-        'mapel_id' => $mapel->id,
-        'guru_id' => $guru->id,
-        'kelas_id' => $request->kelas_id,
-        'batas_waktu' => $request->batas_waktu,
-        'poin' => $request->poin,
-        'status' => 'draft',
-    ]);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'judul' => 'required|max:255',
+            'deskripsi' => 'required',
+            'kelas_id' => 'required|exists:kelas,id',
+            'batas_waktu' => 'required|date|after:now',
+            'poin' => 'required|integer|min:1|max:1000',
+        ]);
 
-    return redirect()->route('guru.soal.create', $tantangan)
-        ->with('success', 'Tantangan dibuat! Sekarang tambahkan soal.');
-}
+        $guru = Auth::user();
+
+        // ambil mapel pertama guru
+        $mapel = $guru->mapel()->first();
+
+        if (!$mapel) {
+            return back()->withErrors(['mapel' => 'Guru belum memiliki mapel!']);
+        }
+
+        $tantangan = Tantangan::create([
+            'judul' => $request->judul,
+            'deskripsi' => $request->deskripsi,
+            'mapel_id' => $mapel->id,
+            'guru_id' => $guru->id,
+            'kelas_id' => $request->kelas_id,
+            'batas_waktu' => $request->batas_waktu,
+            'poin' => $request->poin,
+            'status' => 'draft',
+        ]);
+
+        return redirect()->route('guru.soal.create', $tantangan)
+            ->with('success', 'Tantangan dibuat! Sekarang tambahkan soal.');
+    }
 
     public function show(Tantangan $tantangan)
     {
@@ -81,46 +82,36 @@ public function store(Request $request)
         return view('guru.tantangan.show', compact('tantangan', 'siswaCount'));
     }
 
-public function publish(Tantangan $tantangan)
+public function publish(Request $request, $id)
 {
-    if ($tantangan->guru_id !== Auth::id()) {
-        abort(403);
-    }
-
-    if ($tantangan->soal->count() < 1) {
-        return back()->with('error','Tambahkan minimal 1 soal sebelum mempublikasikan!');
-    }
+    $tantangan = Tantangan::findOrFail($id);
 
     $tantangan->update([
-        'status' => 'published'
+        'status' => 'published',
+        'kelas_id' => $request->kelas_id
     ]);
 
-    
+    $siswas = User::where('role', 'siswa')->get();
 
-    // LANGSUNG AMBIL SEMUA USER DENGAN ROLE SISWA
-    $listSiswa = User::where('role', 'siswa')->get();
-
-    // DEBUG: Cek di log (storage/logs/laravel.log)
-    \Log::info("Mengirim notifikasi ke " . $listSiswa->count() . " siswa.");
-
-    if ($listSiswa->isNotEmpty()) {
-        Notification::send($listSiswa, new TantanganBaruNotification($tantangan));
+    foreach ($siswas as $siswa) {
+        $siswa->notify(new TantanganBaruNotification($tantangan));
     }
 
-    return redirect()->route('guru.tantangan.index')
-        ->with('success','Tantangan dipublikasikan ke semua siswa!');
+    return back()->with('success', 'Tantangan berhasil dipublish & notifikasi terkirim!');
 }
 
-public function unpublish(Tantangan $tantangan)
-{
-    if ($tantangan->guru_id !== Auth::id()) { abort(403); }
+    public function unpublish(Tantangan $tantangan)
+    {
+        if ($tantangan->guru_id !== Auth::id()) { 
+            abort(403); 
+        }
 
-    $tantangan->update([
-        'status' => 'draft'
-    ]);
+        $tantangan->update([
+            'status' => 'draft'
+        ]);
 
-    return back()->with('success', 'Tantangan ditarik kembali (menjadi draft).');
-}
+        return back()->with('success', 'Tantangan ditarik kembali (menjadi draft).');
+    }
 
     public function edit(Tantangan $tantangan)
     {
@@ -147,7 +138,6 @@ public function unpublish(Tantangan $tantangan)
             'deskripsi' => 'required',
             'mapel_id' => 'required|exists:mapel,id',
             'kelas_id' => 'required|exists:kelas,id',
-            'tipe' => 'required|in:pg,essay,matching',
             'batas_waktu' => 'required|date|after:now',
             'poin' => 'required|integer|min:1|max:1000',
         ]);

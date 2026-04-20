@@ -19,8 +19,7 @@ public function headings(): array
         'username',
         'password',
         'role',
-        'mapel_id',
-        'kelas_id',
+        'kelas',
         'total_poin',
         'level'
     ];

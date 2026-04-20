@@ -22,35 +22,35 @@ class MateriController extends Controller
         return view('guru.materi.index', compact('materis', 'kelas'));
     }
 
-public function create()
-{
-    $kelas = Kelas::select('id', 'nama_kelas')->get();
-    $mapel = Mapel::select('id', 'nama_mapel')->get(); // Sesuaikan kolom
-    return view('guru.materi.create', compact('kelas', 'mapel'));
-}
-
-public function store(Request $request)
-{
-    $request->validate([
-        'judul' => 'required|max:255',
-        'kelas_id' => 'required|exists:kelas,id',           // 🔥 REQUIRED!
-        'mapel_id' => 'required|exists:mapel,id',
-        'deskripsi' => 'required',
-        'file_materi' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
-    ]);
-
-    // 🔥 SIMPAN kelas_id KE DB!
-    $data = $request->only(['judul', 'kelas_id', 'mapel_id', 'deskripsi']);
-    $data['guru_id'] = auth()->id();
-
-    if ($request->hasFile('file_materi')) {
-        $data['file_url'] = $request->file('file_materi')->store('materi', 'public');
+    public function create()
+    {
+        $kelas = Kelas::select('id', 'nama_kelas')->get();
+        $mapel = Mapel::select('id', 'nama_mapel')->get(); // Sesuaikan kolom
+        return view('guru.materi.create', compact('kelas', 'mapel'));
     }
 
-    Materi::create($data);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'judul' => 'required|max:255',
+            'kelas_id' => 'required|exists:kelas,id',           // 🔥 REQUIRED!
+            'mapel_id' => 'required|exists:mapel,id',
+            'deskripsi' => 'required',
+            'file_materi' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+        ]);
 
-    return redirect('/guru/materi')->with('success', '✅ Materi Kelas ' . $request->kelas_id . ' berhasil ditambahkan!');
-}
+        // 🔥 SIMPAN kelas_id KE DB!
+        $data = $request->only(['judul', 'kelas_id', 'mapel_id', 'deskripsi']);
+        $data['guru_id'] = auth()->id();
+
+        if ($request->hasFile('file_materi')) {
+            $data['file_url'] = $request->file('file_materi')->store('materi', 'public');
+        }
+
+        Materi::create($data);
+
+        return redirect('/guru/materi')->with('success', '✅ Materi Kelas ' . $request->kelas_id . ' berhasil ditambahkan!');
+    }
 
 public function update(Request $request, Materi $materi)
 {
@@ -75,9 +75,8 @@ public function update(Request $request, Materi $materi)
 
     $materi->update($data);
 
-    return redirect('/guru/materi')->with('success', '✅ Materi Kelas ' . $request->kelas_id . ' berhasil diupdate!');
+    return redirect('/guru/materi')->with('success', ' Materi Kelas ' . $request->kelas_id . ' berhasil diupdate!');
 }
-
 
 public function edit(Materi $materi)
 {
@@ -86,7 +85,6 @@ public function edit(Materi $materi)
     $mapel = Mapel::select('id', 'nama_mapel')->get();
     return view('guru.materi.edit', compact('materi', 'kelas', 'mapel'));
 }
-
 public function show(Materi $materi)
 {
     $this->authorizeMateri($materi);
@@ -104,7 +102,7 @@ public function show(Materi $materi)
         
         $materi->delete();
 
-        return redirect('/guru/materi')->with('success', '✅ Materi berhasil dihapus!');
+        return redirect('/guru/materi')->with('success', ' Materi berhasil dihapus!');
     }
 
     private function authorizeMateri(Materi $materi)

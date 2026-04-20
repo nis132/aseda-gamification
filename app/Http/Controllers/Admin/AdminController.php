@@ -8,7 +8,6 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        // CHECK ROLE DI SINI
         if (!auth()->user()->isAdmin()) {
             abort(403, 'Hanya Admin!');
         }

@@ -74,19 +74,6 @@
 
                 <div class="card-body p-4 bg-light">
                     {{-- ALERT MESSAGES --}}
-                    @if(session('success'))
-                        <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show mb-4">
-                            <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
-                    @if(session('error'))
-                        <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show mb-4">
-                            <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
-
                     {{-- STATS GRID --}}
                     <div class="row g-3 mb-5">
                         <div class="col-6 col-md-3">
@@ -163,18 +150,32 @@
                                                 <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
                                                     <i class="fas fa-ellipsis-v"></i>
                                                 </button>
-                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                                                    <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2 text-info"></i>Edit</a></li>
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    <li>
-                                                        <form action="{{ route('guru.soal.destroy', [$tantangan, $soal]) }}" method="POST">
-                                                            @csrf @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Hapus soal ini?')">
-                                                                <i class="fas fa-trash me-2"></i>Hapus
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                </ul>
+<ul class="dropdown-menu dropdown-menu-end shadow border-0">
+
+    {{-- EDIT --}}
+    <li>
+        <a class="dropdown-item" href="{{ route('guru.soal.edit', [$tantangan, $soal]) }}">
+            <i class="fas fa-edit me-2 text-info"></i>Edit
+        </a>
+    </li>
+
+    <li><hr class="dropdown-divider"></li>
+
+    {{-- DELETE --}}
+    <li>
+        <form action="{{ route('guru.soal.destroy', [$tantangan, $soal]) }}" method="POST">
+            @csrf
+            @method('DELETE')
+
+            <button type="submit"
+                class="dropdown-item text-danger"
+                onclick="return confirm('Hapus soal ini?')">
+                <i class="fas fa-trash me-2"></i>Hapus
+            </button>
+        </form>
+    </li>
+
+</ul>
                                             </div>
                                         </div>
                                         <div class="card-body">

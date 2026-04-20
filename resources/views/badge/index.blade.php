@@ -56,7 +56,7 @@
 
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>🏅 Koleksi Badge Saya</h3>
+        <h3>Koleksi Badge Saya</h3>
         <p class="text-muted">Total Badge: {{ $ownedBadges->count() }} Jenis</p>
     </div>
 

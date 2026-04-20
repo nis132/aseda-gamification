@@ -2,23 +2,26 @@
 @section('title', 'Penilaian - ' . $tantangan->judul)
 
 @section('content')
-<div class="container-fluid py-4">
+<div class="container py-4">
 
     {{-- HEADER --}}
     <div class="mb-4">
-        <h3 class="fw-bold mb-1">
-            TUGAS : {{ strtoupper($tantangan->judul) }}
-        </h3>
-
-        <div class="d-flex gap-4 text-muted">
-            <div>
-                <strong>{{ $jawaban->count() }}</strong> Diserahkan
-            </div>
-        </div>
+        <h4 class="fw-bold mb-1">
+            {{ $tantangan->judul }}
+        </h4>
+        <small class="text-muted">
+            {{ $jawaban->count() }} siswa mengumpulkan
+        </small>
     </div>
 
-    {{-- GRID SISWA --}}
-    <div class="row g-4">
+    {{-- EMPTY --}}
+    @if($jawaban->isEmpty())
+        <div class="text-center py-5">
+            <h6 class="text-muted">Belum ada jawaban masuk</h6>
+        </div>
+    @else
+
+    <div class="row g-3">
 
         @foreach($jawaban as $siswaId => $listJawaban)
 
@@ -37,45 +40,45 @@
                 }
 
                 $nilaiAkhir = $count > 0 ? round($total/$count,1) : 0;
+                $siswa = $listJawaban->first()->siswa;
             @endphp
 
-            <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="col-lg-3 col-md-4 col-6">
 
-                <div class="card shadow-sm border-0 h-100 siswa-card"
-                     style="cursor:pointer"
+                <div class="card border-0 shadow-sm h-100 siswa-card"
                      onclick="window.location='{{ route('guru.nilai.detail', [$tantangan->id, $siswaId]) }}'">
 
-                    <div class="card-body text-center">
+                    <div class="card-body text-center p-3">
 
-                        {{-- FOTO --}}
-                        <div class="mb-3">
-                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
-                                 style="width:70px;height:70px;margin:auto;font-size:24px;">
-                                {{ strtoupper(substr($listJawaban->first()->siswa->nama,1)) }}
+                        {{-- AVATAR --}}
+                        <div class="mb-2">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto"
+                                 style="width:50px;height:50px;font-size:18px;">
+                                {{ strtoupper(substr($siswa->nama,0,1)) }}
                             </div>
                         </div>
 
                         {{-- NAMA --}}
-                        <h6 class="fw-bold mb-2">
-                            {{ $listJawaban->first()->siswa->nama }}
+                        <h6 class="fw-bold mb-1 small text-truncate">
+                            {{ $siswa->nama }}
                         </h6>
 
                         {{-- STATUS --}}
                         @if($belumFinal)
-                            <span class="badge bg-warning mb-2">
-                                Menunggu Penilaian
+                            <span class="badge bg-warning text-dark small mb-2">
+                                Belum Dinilai
                             </span>
                         @else
-                            <span class="badge bg-success mb-2">
-                                Dinilai
+                            <span class="badge bg-success small mb-2">
+                                Selesai
                             </span>
                         @endif
 
                         {{-- NILAI --}}
-                        <div class="mt-2">
-                            <h5 class="fw-bold text-primary">
+                        <div>
+                            <strong class="text-primary">
                                 {{ $nilaiAkhir }}%
-                            </h5>
+                            </strong>
                         </div>
 
                     </div>
@@ -87,13 +90,18 @@
 
     </div>
 
+    @endif
+
 </div>
 
 <style>
-.siswa-card:hover{
-    transform: translateY(-5px);
+.siswa-card {
+    cursor: pointer;
     transition: 0.2s;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+.siswa-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
 }
 </style>
 

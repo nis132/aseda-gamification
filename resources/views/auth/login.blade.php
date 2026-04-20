@@ -74,7 +74,10 @@
     <div class="card shadow-lg border-0">
         <div class="card-body p-5">
             <div class="text-center mb-4">
-                <i class="fas fa-sign-in-alt fa-4x text-primary mb-3"></i>
+                    <img src="{{ asset('storage/logo_aseda.webp') }}" 
+                        alt="Logo" 
+                        style="width:80px; height:auto;" 
+                        class="mb-3">
                 <h2 class="h4 fw-bold text-primary">Masuk ke Sistem</h2>
                 <p class="text-muted">Web Pembelajaran Berbasis Gamifikasi</p>
             </div>

@@ -52,32 +52,66 @@ $rankKelas = $rankIndex !== false ? $rankIndex + 1 : '-';
         return view('siswa.dashboard', compact('tantanganAktif', 'totalPoin', 'rankKelas'));
     }
 
-public function materi(Request $request)
-{
-    $kelasId = auth()->user()->kelasIds()->first();
-    
-    $materis = Materi::with('mapel', 'guru', 'kelas')
-        ->when($kelasId, function($query) use ($kelasId) {
-            $query->where('kelas_id', $kelasId); // 🔥 SIMPLE & AKURAT!
-        })
-        ->latest()
-        ->paginate(8);
-
-    return view('siswa.materi.index', compact('materis', 'kelasId'));
-}
-
-
-
-    public function tantangan()
+    public function materi(Request $request)
     {
         $kelasId = auth()->user()->kelasIds()->first();
-        $tantangans = Tantangan::where('kelas_id', $kelasId)
-            ->with(['mapel', 'guru', 'nilaiTantangan' => fn($q) => $q->where('siswa_id', auth()->id())])
-            ->withCount('soal')
-            ->latest()
-            ->paginate(10);
 
-        return view('siswa.tantangan.index', compact('tantangans'));
+        $mapels = \App\Models\Mapel::all();
+
+        $materis = Materi::with('mapel', 'guru', 'kelas')
+            ->when($kelasId, function($query) use ($kelasId) {
+                $query->where('kelas_id', $kelasId);
+            })
+
+            ->when($request->mapel, function($query) use ($request) {
+                $query->where('mapel_id', $request->mapel);
+            })
+            ->latest()
+            ->paginate(8)
+            ->withQueryString(); // biar pagination gak reset filter
+
+        return view('siswa.materi.index', compact('materis', 'kelasId', 'mapels'));
+    }
+
+    public function tantangan(Request $request)
+    {
+        $kelasId = auth()->user()->kelasIds()->first();
+
+        $mapelId = $request->mapel;
+        $status = $request->status;
+
+        $query = Tantangan::where('kelas_id', $kelasId)
+            ->with([
+                'mapel',
+                'guru',
+                'nilaiTantangan' => fn($q) => $q->where('siswa_id', auth()->id())
+            ])
+            ->withCount('soal');
+
+        if ($mapelId) {
+            $query->where('mapel_id', $mapelId);
+        }
+
+        if ($status == 'aktif') {
+            $query->where('batas_waktu', '>', now());
+        } elseif ($status == 'selesai') {
+            $query->whereHas('nilaiTantangan', function ($q) {
+                $q->where('siswa_id', auth()->id());
+            });
+        } elseif ($status == 'terlambat') {
+            $query->where('batas_waktu', '<=', now());
+        }
+
+        $tantangans = $query->latest()->paginate(9);
+
+        $mapels = DB::table('mapel')->get();
+
+        return view('siswa.tantangan.index', compact(
+            'tantangans',
+            'mapels',
+            'mapelId',
+            'status'
+        ));
     }
 
     public function kerjakan(Tantangan $tantangan)
@@ -100,213 +134,237 @@ public function materi(Request $request)
         return view('siswa.tantangan.kerjakan', compact('tantangan', 'soals'));
     }
 
-public function submit(Request $request, Tantangan $tantangan)
-{
-    $kelasId = auth()->user()->kelasIds()->first();
+    public function submit(Request $request, Tantangan $tantangan)
+    {
+        $kelasId = auth()->user()->kelasIds()->first();
 
-    if ($tantangan->kelas_id != $kelasId) {
-        return redirect()->route('siswa.tantangan')
-            ->with('error','Akses ditolak');
-    }
-
-    $jawabans = $request->input('jawaban', []);
-
-    $totalNilai = 0;
-    $soalDinilai = 0;
-
-    foreach ($tantangan->soal as $soal) {
-
-        // pastikan tidak null
-        $jawabanSiswa = $jawabans[$soal->id] ?? '-';
-
-        $nilai = 0;
-        $manual = 0;
-
-        // =====================
-        // PILIHAN GANDA
-        // =====================
-        if ($soal->tipe == 'pg') {
-
-            $nilai = strtoupper($jawabanSiswa) == strtoupper($soal->jawaban_benar)
-                ? 100 : 0;
-
-            $totalNilai += $nilai;
-            $soalDinilai++;
+        if ($tantangan->kelas_id != $kelasId) {
+            return redirect()->route('siswa.tantangan')
+                ->with('error','Akses ditolak');
         }
 
-        // =====================
-        // MATCHING
-        // =====================
-        elseif ($soal->tipe == 'matching') {
+        $jawabans = $request->input('jawaban', []);
 
-            $pairsBenar = json_decode($soal->matching_pairs, true) ?? [];
+        $totalNilai = 0;
+        $soalDinilai = 0;
 
-            $pairsJawaban = is_array($jawabanSiswa)
-                ? $jawabanSiswa
-                : json_decode($jawabanSiswa, true) ?? [];
+        foreach ($tantangan->soal as $soal) {
 
-            $benar = 0;
+            // pastikan tidak null
+            $jawabanSiswa = $jawabans[$soal->id] ?? '-';
 
-            foreach ($pairsBenar as $key => $val) {
-                if(isset($pairsJawaban[$key]) && $pairsJawaban[$key] == $val){
-                    $benar++;
-                }
+            $nilai = 0;
+            $manual = 0;
+
+            // =====================
+            // PILIHAN GANDA
+            // =====================
+            if ($soal->tipe == 'pg') {
+
+                $nilai = strtoupper($jawabanSiswa) == strtoupper($soal->jawaban_benar)
+                    ? 100 : 0;
+
+                $totalNilai += $nilai;
+                $soalDinilai++;
             }
 
-            $jumlahPair = count($pairsBenar);
+            // =====================
+            // MATCHING
+            // =====================
+            elseif ($soal->tipe == 'matching') {
 
-            $nilai = $jumlahPair > 0
-                ? ($benar / $jumlahPair) * 100
-                : 0;
+                $pairsBenar = json_decode($soal->matching_pairs, true) ?? [];
 
-            $totalNilai += $nilai;
-            $soalDinilai++;
+                $pairsJawaban = is_array($jawabanSiswa)
+                    ? $jawabanSiswa
+                    : json_decode($jawabanSiswa, true) ?? [];
+
+                $benar = 0;
+
+                foreach ($pairsBenar as $key => $val) {
+                    if(isset($pairsJawaban[$key]) && $pairsJawaban[$key] == $val){
+                        $benar++;
+                    }
+                }
+
+                $jumlahPair = count($pairsBenar);
+
+                $nilai = $jumlahPair > 0
+                    ? ($benar / $jumlahPair) * 100
+                    : 0;
+
+                $totalNilai += $nilai;
+                $soalDinilai++;
+            }
+
+            // =====================
+            // ESSAY
+            // =====================
+            else {
+
+                $nilai = null;
+                $manual = 1;
+            }
+
+            // simpan jawaban
+            JawabanSiswa::create([
+                'siswa_id' => auth()->id(),
+                'tantangan_id' => $tantangan->id,
+                'soal_id' => $soal->id,
+                'jawaban' => is_array($jawabanSiswa)
+                    ? json_encode($jawabanSiswa)
+                    : $jawabanSiswa,
+                'nilai' => $nilai,
+                'dinilai_manual' => $manual
+            ]);
         }
 
         // =====================
-        // ESSAY
+        // HITUNG NILAI AKHIR
         // =====================
-        else {
 
-            $nilai = null;
-            $manual = 1;
-        }
+        $rataNilai = $soalDinilai > 0
+            ? $totalNilai / $soalDinilai
+            : 0;
 
-        // simpan jawaban
-        JawabanSiswa::create([
+        $poinDidapat = round(($rataNilai / 100) * $tantangan->poin);
+
+        NilaiTantangan::create([
             'siswa_id' => auth()->id(),
             'tantangan_id' => $tantangan->id,
-            'soal_id' => $soal->id,
-            'jawaban' => is_array($jawabanSiswa)
-                ? json_encode($jawabanSiswa)
-                : $jawabanSiswa,
-            'nilai' => $nilai,
-            'dinilai_manual' => $manual
+            'total_nilai' => $rataNilai,
+            'poin_didapat' => $poinDidapat,
+            'waktu_submit' => now()
         ]);
+
+        // Kita panggil fungsi static dari BadgeController
+        \App\Http\Controllers\BadgeController::checkAndGiveBadge(auth()->id(), $tantangan->id);
+
+        return redirect()->route('siswa.tantangan')
+            ->with('success', " Tantangan selesai! Kamu dapat $poinDidapat poin.");
     }
 
-    // =====================
-    // HITUNG NILAI AKHIR
-    // =====================
+    public function profil()
+    {
+        $user = auth()->user();
 
-    $rataNilai = $soalDinilai > 0
-        ? $totalNilai / $soalDinilai
-        : 0;
+        $kelas = DB::table('siswa_kelas')
+            ->join('kelas', 'kelas.id', '=', 'siswa_kelas.kelas_id')
+            ->where('siswa_kelas.siswa_id', $user->id)
+            ->select('kelas.id', 'kelas.nama_kelas')
+            ->first();
 
-    $poinDidapat = round(($rataNilai / 100) * $tantangan->poin);
+        $tantanganSelesai = DB::table('nilai_tantangan')
+            ->where('siswa_id', $user->id)
+            ->count();
 
-    NilaiTantangan::create([
-        'siswa_id' => auth()->id(),
-        'tantangan_id' => $tantangan->id,
-        'total_nilai' => $rataNilai,
-        'poin_didapat' => $poinDidapat,
-        'waktu_submit' => now()
-    ]);
+        $totalPoin = DB::table('nilai_tantangan')
+            ->where('siswa_id', $user->id)
+            ->sum('poin_didapat');
 
-// 2. TRIGGER CEK BADGE DI SINI
-    // Kita panggil fungsi static dari BadgeController
-    \App\Http\Controllers\BadgeController::checkAndGiveBadge(auth()->id(), $tantangan->id);
+        $rank = null;
 
-    return redirect()->route('siswa.tantangan')
-        ->with('success', "🎉 Tantangan selesai! Kamu dapat $poinDidapat poin.");
-}
+        if ($kelas) {
+            $leaderboard = DB::table('nilai_tantangan')
+                ->join('siswa_kelas', 'nilai_tantangan.siswa_id', '=', 'siswa_kelas.siswa_id')
+                ->where('siswa_kelas.kelas_id', $kelas->id)
+                ->select(
+                    'nilai_tantangan.siswa_id',
+                    DB::raw('SUM(nilai_tantangan.poin_didapat) as total_poin'),
+                    DB::raw('SUM(
+                        TIMESTAMPDIFF(
+                            SECOND,
+                            nilai_tantangan.created_at,
+                            nilai_tantangan.waktu_submit
+                        )
+                    ) as total_waktu')
+                )
+                ->groupBy('nilai_tantangan.siswa_id')
+                ->orderByDesc('total_poin')
+                ->orderBy('total_waktu')
+                ->get();
 
-public function profil()
-{
-    $user = auth()->user();
-
-    // Ambil kelas
-    $kelas = DB::table('siswa_kelas')
-        ->join('kelas', 'kelas.id', '=', 'siswa_kelas.kelas_id')
-        ->where('siswa_kelas.siswa_id', $user->id)
-        ->select('kelas.*')
-        ->first();
-
-    // Total tantangan selesai
-    $tantanganSelesai = DB::table('nilai_tantangan')
-        ->where('siswa_id', $user->id)
-        ->count();
-
-    // Total poin
-    $totalPoin = DB::table('nilai_tantangan')
-        ->where('siswa_id', $user->id)
-        ->sum('poin_didapat');
-
-    // Hitung leaderboard kelas
-    $leaderboard = DB::table('nilai_tantangan')
-    ->join('siswa_kelas', 'nilai_tantangan.siswa_id', '=', 'siswa_kelas.siswa_id')
-    ->where('siswa_kelas.kelas_id', $kelas->id)
-    ->select(
-        'nilai_tantangan.siswa_id',
-        DB::raw('SUM(nilai_tantangan.poin_didapat) as total_poin'),
-        DB::raw('SUM(
-            TIMESTAMPDIFF(
-                SECOND, 
-                nilai_tantangan.created_at, 
-                nilai_tantangan.waktu_submit
-            )
-        ) as total_waktu')
-    )
-    ->groupBy('nilai_tantangan.siswa_id')
-    ->orderByDesc('total_poin')
-    ->orderBy('total_waktu')
-    ->get();
-    // Tentukan rank user
-    $rank = null;
-    foreach ($leaderboard as $index => $item) {
-        if ($item->siswa_id == $user->id) {
-            $rank = $index + 1;
+            foreach ($leaderboard as $index => $item) {
+                if ($item->siswa_id == $user->id) {
+                    $rank = $index + 1;
+                    break;
+                }
+            }
         }
+
+        $materiSelesai = DB::table('materi_selesai')
+            ->where('siswa_id', $user->id)
+            ->count();
+
+        $level = 1;
+
+        if ($materiSelesai >= 12 && $tantanganSelesai >= 12) {
+            $level = 5;
+        } elseif ($materiSelesai >= 9 && $tantanganSelesai >= 9) {
+            $level = 4;
+        } elseif ($materiSelesai >= 6 && $tantanganSelesai >= 6) {
+            $level = 3;
+        } elseif ($materiSelesai >= 3 && $tantanganSelesai >= 3) {
+            $level = 2;
+        }
+
+        $badges = \App\Models\SiswaBadge::with('badge')
+            ->where('siswa_id', $user->id)
+            ->get()
+            ->groupBy('badge_id');
+
+        return view('siswa.profil', compact(
+            'user',
+            'kelas',
+            'tantanganSelesai',
+            'totalPoin',
+            'rank',
+            'level',
+            'badges'
+        ));
     }
 
-    // ======================
-    // LEVEL SYSTEM
-    // ======================
+    public function hasil($id)
+    {
+        $tantangan = Tantangan::with(['soal'])
+            ->findOrFail($id);
 
-    $materiSelesai = DB::table('materi_selesai')
-        ->where('siswa_id', $user->id)
-        ->count();
+        $nilai = $tantangan->nilaiTantangan()
+            ->where('siswa_id', auth()->id())
+            ->firstOrFail();
 
-    $level = 1;
+        return view('siswa.tantangan.hasil', compact('tantangan', 'nilai'));
+    }
+public function review($id)
+{
+    $tantangan = Tantangan::with(['soal'])
+        ->findOrFail($id);
 
-    if ($materiSelesai >= 12 && $tantanganSelesai >= 12) {
-        $level = 5;
-    } elseif ($materiSelesai >= 9 && $tantanganSelesai >= 9) {
-        $level = 4;
-    } elseif ($materiSelesai >= 6 && $tantanganSelesai >= 6) {
-        $level = 3;
-    } elseif ($materiSelesai >= 3 && $tantanganSelesai >= 3) {
-        $level = 2;
+    $jawaban = JawabanSiswa::where('siswa_id', auth()->id())
+        ->where('tantangan_id', $id)
+        ->get();
+
+    return view('siswa.tantangan.review', compact('tantangan', 'jawaban'));
+}
+
+    public function materiShow(Materi $materi)
+    {
+        $materi->load('mapel', 'guru', 'kelas');
+
+        $sudahSelesai = MateriSelesai::where('siswa_id', Auth::id())
+            ->where('materi_id', $materi->id)
+            ->exists();
+
+        return view('siswa.materi.show', compact('materi', 'sudahSelesai'));
     }
 
-    return view('siswa.profil', compact(
-        'user',
-        'kelas',
-        'tantanganSelesai',
-        'totalPoin',
-        'rank',
-        'level'
-    ));
-}
+    public function selesai(Materi $materi)
+    {
+        MateriSelesai::firstOrCreate([
+            'siswa_id' => Auth::id(),
+            'materi_id' => $materi->id
+        ]);
 
-public function materiShow(Materi $materi)
-{
-    $materi->load('mapel', 'guru', 'kelas');
-
-    $sudahSelesai = MateriSelesai::where('siswa_id', Auth::id())
-        ->where('materi_id', $materi->id)
-        ->exists();
-
-    return view('siswa.materi.show', compact('materi', 'sudahSelesai'));
-}
-
-public function selesai(Materi $materi)
-{
-    MateriSelesai::firstOrCreate([
-        'siswa_id' => Auth::id(),
-        'materi_id' => $materi->id
-    ]);
-
-    return back()->with('success', 'Materi berhasil ditandai selesai.');
-}
+        return back()->with('success', 'Materi berhasil ditandai selesai.');
+    }
 }

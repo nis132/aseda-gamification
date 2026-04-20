@@ -7,7 +7,15 @@
         <div class="card-header bg-primary text-white">
             <h4>Buat Tantangan Baru</h4>
         </div>
-
+@if($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
         <form method="POST" action="{{ route('guru.tantangan.store') }}">
             @csrf
             <div class="card-body">

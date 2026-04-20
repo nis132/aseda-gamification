@@ -2,274 +2,177 @@
 @section('title', 'Buat Soal - ' . $tantangan->judul)
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row justify-content-center">
-        <div class="col-xl-10">
-            <div class="card shadow-lg border-0">
-                <div class="card-header bg-gradient-success text-white py-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="mb-0"><i class="fas fa-feather me-2"></i>Buat Soal Baru</h3>
-                            <p class="mb-0 opacity-75">Tantangan: <strong>{{ $tantangan->judul }}</strong></p>
-                            <div class="mt-2">
-                                <span class="badge bg-light text-dark me-2">{{ $tantangan->mapel->nama_mapel }}</span>
-                                <span class="badge bg-secondary">{{ $tantangan->kelas->nama_kelas }}</span>
-                            </div>
-                        </div>
-                        <a href="{{ route('guru.tantangan.show', $tantangan) }}" class="btn btn-light btn-lg px-4">
-                            <i class="fas fa-arrow-left me-2"></i>Lihat Soal
-                        </a>
+<div class="container-fluid py-3">
+
+    <div class="card shadow border-0">
+
+        <div class="card-header bg-success text-white py-3">
+            <h5 class="mb-0">
+                <i class="fas fa-feather me-2"></i>Buat Soal - {{ $tantangan->judul }}
+            </h5>
+        </div>
+
+        <form method="POST" action="{{ route('guru.soal.store', $tantangan) }}">
+            @csrf
+
+            <div class="card-body">
+
+                {{-- ================= FORM INPUT SOAL ================= --}}
+                <div class="border rounded p-3 mb-4 bg-light">
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Jenis Soal</label>
+                        <select id="tipeSoal" class="form-select">
+                            <option value="">-- Pilih --</option>
+                            <option value="pg">Pilihan Ganda</option>
+                            <option value="essay">Essay</option>
+                            <option value="matching">Menjodohkan</option>
+                        </select>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Pertanyaan</label>
+                        <textarea id="pertanyaan" class="form-control"></textarea>
+                    </div>
+
+                    {{-- PG --}}
+                    <div id="formPG" class="d-none mb-3">
+                        <input class="form-control mb-2" id="a" placeholder="A">
+                        <input class="form-control mb-2" id="b" placeholder="B">
+                        <input class="form-control mb-2" id="c" placeholder="C">
+                        <input class="form-control mb-2" id="d" placeholder="D">
+
+                        <select id="jawaban" class="form-select">
+                            <option value="">Jawaban Benar</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+
+                    {{-- Essay --}}
+                    <div id="formEssay" class="d-none mb-3">
+                        <textarea id="jawabanEssay" class="form-control" placeholder="Jawaban / kunci"></textarea>
+                    </div>
+
+                    {{-- Matching --}}
+                    <div id="formMatching" class="d-none mb-3">
+                        <input id="kiri" class="form-control mb-2" placeholder="Kiri (pisahkan koma)">
+                        <input id="kanan" class="form-control" placeholder="Kanan (pisahkan koma)">
+                    </div>
+
+                    <button type="button" id="addSoal" class="btn btn-primary mt-3">
+                        + Tambah Soal
+                    </button>
+
                 </div>
 
-                <form method="POST" action="{{ route('guru.soal.store', $tantangan) }}" novalidate>
-                    @csrf
-                    <div class="card-body p-5">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show mb-4 rounded-3 shadow-sm">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        @endif
+                {{-- ================= LIST SOAL ================= --}}
+                <h5 class="fw-bold mb-3">Daftar Soal</h5>
+                <div id="listSoal" class="row g-3"></div>
 
-                        @if($errors->any())
-                            <div class="alert alert-danger">
-                                <ul class="mb-0">
-                                    @foreach($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
+                {{-- hidden input final --}}
+                <input type="hidden" name="soal_data" id="soalData">
 
-                        {{-- TIPE SOAL --}}
-                        <div class="row mb-5">
-                            <div class="col-lg-4">
-                                <label class="form-label fw-bold fs-5 text-primary">Jenis Soal <span class="text-danger">*</span></label>
-                                <select name="tipe" id="tipeSoal" class="form-select form-control-lg @error('tipe') is-invalid @enderror" required>
-                                    <option value="">-- Pilih Jenis Soal --</option>
-                                    <option value="pg" {{ old('tipe') == 'pg' ? 'selected' : '' }}>Pilihan Ganda</option>
-                                    <option value="essay" {{ old('tipe') == 'essay' ? 'selected' : '' }}>Essay</option>
-                                    <option value="matching" {{ old('tipe') == 'matching' ? 'selected' : '' }}>Menjodohkan</option>
-                                </select>
-                                @error('tipe')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        {{-- PERTANYAAN --}}
-                        <div class="row mb-5">
-                            <div class="col-lg-12">
-                                <label class="form-label fw-bold fs-5 text-primary">Pertanyaan <span class="text-danger">*</span></label>
-                                <textarea name="pertanyaan" rows="4" class="form-control @error('pertanyaan') is-invalid @enderror" 
-                                          placeholder="Tulis pertanyaan soal dengan jelas dan spesifik..." required>{{ old('pertanyaan') }}</textarea>
-                                @error('pertanyaan')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        {{-- FORM PG --}}
-                        <div id="formPG" class="tipe-form d-none mb-5">
-                            <div class="row g-4">
-                                <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-primary">Opsi A <span class="text-danger">*</span></label>
-                                    <input type="text" name="opsi_a" class="form-control @error('opsi_a') is-invalid @enderror" 
-                                           value="{{ old('opsi_a') }}" required>
-                                    @error('opsi_a') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-primary">Opsi B <span class="text-danger">*</span></label>
-                                    <input type="text" name="opsi_b" class="form-control @error('opsi_b') is-invalid @enderror" 
-                                           value="{{ old('opsi_b') }}" required>
-                                    @error('opsi_b') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-primary">Opsi C</label>
-                                    <input type="text" name="opsi_c" class="form-control" value="{{ old('opsi_c') }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-primary">Opsi D</label>
-                                    <input type="text" name="opsi_d" class="form-control" value="{{ old('opsi_d') }}">
-                                </div>
-                            </div>
-                            <div class="row mt-4">
-                                <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-primary">Jawaban Benar <span class="text-danger">*</span></label>
-                                    <select name="jawaban_benar" class="form-select @error('jawaban_benar') is-invalid @enderror" required>
-                                        <option value="">-- Pilih --</option>
-                                        <option value="A" {{ old('jawaban_benar') == 'A' ? 'selected' : '' }}>A</option>
-                                        <option value="B" {{ old('jawaban_benar') == 'B' ? 'selected' : '' }}>B</option>
-                                        <option value="C" {{ old('jawaban_benar') == 'C' ? 'selected' : '' }}>C</option>
-                                        <option value="D" {{ old('jawaban_benar') == 'D' ? 'selected' : '' }}>D</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- FORM ESSAY --}}
-                        <div id="formEssay" class="tipe-form d-none mb-5">
-                            <label class="form-label fw-bold text-primary">Jawaban Benar <span class="text-danger">*</span></label>
-                            <textarea name="jawaban_benar" rows="4" class="form-control @error('jawaban_benar') is-invalid @enderror" 
-                                      placeholder="Tulis jawaban yang benar (kata kunci utama)..." required>{{ old('jawaban_benar') }}</textarea>
-                            @error('jawaban_benar') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-
-                        {{-- FORM MATCHING DYNAMIC --}}
-                        <div id="formMatching" class="tipe-form d-none mb-5">
-                            <div class="alert alert-info mb-4">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Cocokkan KIRI → KANAN (min 2 pasang, max 6 pasang)
-                            </div>
-                            
-                            <div class="row g-3 mb-4 fw-bold border-bottom pb-2">
-                                <div class="col-md-5 text-primary">KOLOM KIRI</div>
-                                <div class="col-md-5 text-success">KOLOM KANAN</div>
-                                <div class="col-md-2 text-center">No</div>
-                            </div>
-
-                            <!-- Pair 1 (WAJIB) -->
-                            <div class="matching-pair mb-4 p-3 border rounded bg-light" data-pair="1">
-                                <div class="row align-items-end g-3">
-                                    <div class="col-md-5">
-                                        <input type="text" name="kiri_1" class="form-control @error('kiri_1') is-invalid @enderror" 
-                                               value="{{ old('kiri_1') }}" placeholder="1. Jakarta" required>
-                                        @error('kiri_1') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-                                    </div>
-                                    <div class="col-md-5">
-                                        <input type="text" name="kanan_1" class="form-control @error('kanan_1') is-invalid @enderror" 
-                                               value="{{ old('kanan_1') }}" placeholder="DKI Jakarta" required>
-                                        @error('kanan_1') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-                                    </div>
-                                    <div class="col-md-2 text-center">
-                                        <span class="badge bg-success fs-6">1</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Pairs 2-6 (DINAMIS) -->
-                            @for($i = 2; $i <= 6; $i++)
-                            <div class="matching-pair mb-4 p-3 border rounded bg-light d-none" data-pair="{{ $i }}">
-                                <div class="row align-items-end g-3">
-                                    <div class="col-md-5">
-                                        <input type="text" name="kiri_{{ $i }}" class="form-control" 
-                                               value="{{ old("kiri_$i") }}" placeholder="{{ $i }}. Bandung">
-                                    </div>
-                                    <div class="col-md-5">
-                                        <input type="text" name="kanan_{{ $i }}" class="form-control" 
-                                               value="{{ old("kanan_$i") }}" placeholder="Jawa Barat">
-                                    </div>
-                                    <div class="col-md-2 text-center">
-                                        <span class="badge bg-primary fs-6">{{ $i }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            @endfor
-
-                            <div class="text-center">
-                                <button type="button" id="addPairBtn" class="btn btn-outline-primary px-4">
-                                    <i class="fas fa-plus me-2"></i>Tambah Pasangan
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- BUTTONS --}}
-                    <div class="card-footer bg-transparent border-0 py-4">
-                        <div class="d-flex justify-content-end gap-3">
-                            <a href="{{ route('guru.tantangan.show', $tantangan) }}" class="btn btn-outline-secondary btn-lg px-5">
-                                <i class="fas fa-times me-2"></i>Batal
-                            </a>
-                            <button type="submit" name="tambah_lagi" value="1" class="btn btn-outline-primary btn-lg px-5">
-                                <i class="fas fa-plus me-2"></i>Tambah Lagi
-                            </button>
-                            <button type="submit" class="btn btn-success btn-lg px-5 shadow-lg">
-                                <i class="fas fa-save me-2"></i>Simpan & Selesai
-                            </button>
-                        </div>
-                    </div>
-                </form>
             </div>
-        </div>
+
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-success btn-lg">
+                    Simpan Semua Soal
+                </button>
+            </div>
+
+        </form>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const tipeSelect = document.getElementById('tipeSoal');
-    const forms = document.querySelectorAll('.tipe-form');
-    let pairCount = 1; // Global pair counter
+let soalList = [];
 
-    // Handle tipe change
-    tipeSelect.addEventListener('change', function() {
-        // Hide semua forms
-        forms.forEach(form => {
-            form.classList.add('d-none');
-            const inputs = form.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
-                input.disabled = true;
-                input.removeAttribute('required');
-            });
-        });
-        
-        // Show form yang dipilih
-        const tipe = this.value;
-        let targetForm = null;
-        
-        if (tipe === 'pg') targetForm = document.getElementById('formPG');
-        else if (tipe === 'essay') targetForm = document.getElementById('formEssay');
-        else if (tipe === 'matching') targetForm = document.getElementById('formMatching');
-        
-        if (targetForm) {
-            targetForm.classList.remove('d-none');
-            const inputs = targetForm.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
-                input.disabled = false;
-            });
-            
-            // PG specific required
-            if (tipe === 'pg') {
-                document.querySelector('input[name="opsi_a"]').setAttribute('required', 'required');
-                document.querySelector('input[name="opsi_b"]').setAttribute('required', 'required');
-                document.querySelector('select[name="jawaban_benar"]').setAttribute('required', 'required');
-            }
-            // Matching specific required
-            else if (tipe === 'matching') {
-                // Reset pair count
-                pairCount = 1;
-                document.querySelectorAll('.matching-pair').forEach(pair => pair.classList.add('d-none'));
-                document.querySelector('[data-pair="1"]').classList.remove('d-none');
-                
-                // Required untuk pair 1 & 2 minimum
-                ['kiri_1', 'kanan_1'].forEach(name => {
-                    const input = document.querySelector(`input[name="${name}"]`);
-                    if (input) input.setAttribute('required', 'required');
-                });
-            }
-        }
-    });
+const tipe = document.getElementById('tipeSoal');
+const formPG = document.getElementById('formPG');
+const formEssay = document.getElementById('formEssay');
+const formMatching = document.getElementById('formMatching');
 
-    // Dynamic Matching Pairs
-    document.getElementById('addPairBtn')?.addEventListener('click', function() {
-        pairCount++;
-        if (pairCount > 6) {
-            alert('Maksimal 6 pasangan!');
-            return;
-        }
-        document.querySelector(`[data-pair="${pairCount}"]`).classList.remove('d-none');
-        
-        // Auto-focus first input
-        setTimeout(() => {
-            const input = document.querySelector(`[data-pair="${pairCount}"] input[name="kiri_${pairCount}"]`);
-            if (input) input.focus();
-        }, 100);
-    });
+tipe.addEventListener('change', function () {
 
-    // Load saved tipe on page load
-    if (tipeSelect.value) {
-        tipeSelect.dispatchEvent(new Event('change'));
-    }
+    formPG.classList.add('d-none');
+    formEssay.classList.add('d-none');
+    formMatching.classList.add('d-none');
+
+    if (this.value === 'pg') formPG.classList.remove('d-none');
+    if (this.value === 'essay') formEssay.classList.remove('d-none');
+    if (this.value === 'matching') formMatching.classList.remove('d-none');
+
 });
+
+document.getElementById('addSoal').addEventListener('click', function () {
+
+    let tipeVal = tipe.value;
+    let pertanyaan = document.getElementById('pertanyaan').value;
+
+    if (!tipeVal || !pertanyaan) return alert('Lengkapi soal');
+
+    let data = {
+        tipe: tipeVal,
+        pertanyaan: pertanyaan
+    };
+
+    if (tipeVal === 'pg') {
+        data.opsi_a = document.getElementById('a').value;
+        data.opsi_b = document.getElementById('b').value;
+        data.opsi_c = document.getElementById('c').value;
+        data.opsi_d = document.getElementById('d').value;
+        data.jawaban_benar = document.getElementById('jawaban').value;
+    }
+
+    if (tipeVal === 'essay') {
+        data.jawaban_benar = document.getElementById('jawabanEssay').value;
+    }
+
+    if (tipeVal === 'matching') {
+        data.kiri_items = document.getElementById('kiri').value.split(',');
+        data.kanan_items = document.getElementById('kanan').value.split(',');
+    }
+
+    soalList.push(data);
+
+    renderSoal();
+    resetForm();
+
+});
+
+function renderSoal() {
+    let html = '';
+
+    soalList.forEach((s, i) => {
+        html += `
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <span class="badge bg-primary mb-2">${s.tipe.toUpperCase()}</span>
+                    <h6>${s.pertanyaan}</h6>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById('listSoal').innerHTML = html;
+    document.getElementById('soalData').value = JSON.stringify(soalList);
+}
+
+function resetForm() {
+    document.getElementById('pertanyaan').value = '';
+    document.getElementById('a').value = '';
+    document.getElementById('b').value = '';
+    document.getElementById('c').value = '';
+    document.getElementById('d').value = '';
+    document.getElementById('jawaban').value = '';
+    document.getElementById('jawabanEssay').value = '';
+    document.getElementById('kiri').value = '';
+    document.getElementById('kanan').value = '';
+}
 </script>
+
 @endsection
