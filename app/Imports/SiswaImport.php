@@ -30,12 +30,12 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmpty
         }
 
         $user = User::create([
-            'nama'       => $row['nama'],
-            'username'   => $row['username'],
-            'password'   => Hash::make($row['password']),
-            'role'       => 'siswa',
-            'total_poin' => $row['total_poin'] ?? 0,
-            'level'      => $row['level'] ?? 1,
+            'nama'     => $row['nama'],
+            'nis'      => $row['nis'] ?? null,
+            'username' => $row['username'],
+            'password' => Hash::make($row['password']),
+            'role'     => 'siswa',
+            'level'    => $row['level'] ?? 1,
         ]);
 
         $user->kelas()->attach($kelas->id);
@@ -47,9 +47,10 @@ class SiswaImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmpty
     {
         return [
             'nama'     => 'required',
+            'nis'      => 'required|unique:users,nis',
             'username' => 'required|unique:users,username',
             'password' => 'required|min:6',
-            'kelas' => 'required',
+            'kelas'    => 'required',
         ];
     }
 }

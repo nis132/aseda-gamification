@@ -1,145 +1,118 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Mapel;
-use App\Models\User; 
+use App\Models\User;
+use App\Models\Kelas;
+use App\Models\GuruMapelKelas;
 use Illuminate\Http\Request;
 
 class MapelController extends Controller
 {
     public function index(Request $request)
     {
-        if (!auth()->user()->isAdmin()) {
-            abort(403);
-        }
+        if (!auth()->user()->isAdmin()) abort(403);
 
-        $mapel = Mapel::withCount('guru')
-            ->when($request->search, function($q) use ($request) {
-                $q->where('nama_mapel', 'like', '%' . $request->search . '%');
-            })->paginate(15);
+        $mapel = Mapel::with(['guruMapelKelas.guru', 'guruMapelKelas.kelas'])
+            ->when($request->search, fn($q) => $q->where('nama_mapel', 'like', '%'.$request->search.'%'))
+            ->paginate(15);
 
-        $guru = User::where('role', 'guru')->get();
-        
-        return view('admin.mapel.index', compact('mapel', 'guru'));
+        return view('admin.mapel.index', compact('mapel'));
     }
 
-public function create()
-{
-    if (!auth()->user()->isAdmin()) {
-        abort(403);
-    }
-    
-    $guru = User::where('role', 'guru')->get(['id', 'nama']);
-    return view('admin.mapel.create', compact('guru'));
-}
-
-public function store(Request $request)
-{
-    if (!auth()->user()->isAdmin()) {
-        abort(403);
-    }
-
-    $request->validate([
-        'nama_mapel' => 'required|string|max:100|unique:mapel,nama_mapel',
-        'guru_id' => 'nullable|exists:users,id'
-    ]);
-
-    $mapel = Mapel::create($request->only('nama_mapel'));
-    
-    if ($request->filled('guru_id')) {
-        $mapel->guru()->attach($request->guru_id);
-    }
-
-    $guruNama = $request->guru_id ? User::find($request->guru_id)->nama : 'Belum ditugaskan';
-    
-    return redirect()->route('admin.mapel.index')
-        ->with('success', "Mapel '{$request->nama_mapel}' berhasil dibuat! Guru: $guruNama");
-}
-
-    public function show(Mapel $mapel)
+    public function create()
     {
-        if (!auth()->user()->isAdmin()) {
-            abort(403);
-        }
-        return view('admin.mapel.show', compact('mapel'));
+        if (!auth()->user()->isAdmin()) abort(403);
+
+        $guru  = User::where('role', 'guru')->orderBy('nama')->get(['id', 'nama']);
+        $kelas = Kelas::orderBy('nama_kelas')->get();
+
+        return view('admin.mapel.create', compact('guru', 'kelas'));
     }
 
     public function edit(Mapel $mapel)
     {
-        if (!auth()->user()->isAdmin()) {
-            abort(403);
-        }
+        if (!auth()->user()->isAdmin()) abort(403);
 
-        $guru = User::where('role', 'guru')->get(['id', 'nama']);
+        $mapel->load('guruMapelKelas.guru', 'guruMapelKelas.kelas');
+        $guru  = User::where('role', 'guru')->orderBy('nama')->get(['id', 'nama']);
+        $kelas = Kelas::orderBy('nama_kelas')->get();
 
-        return view('admin.mapel.edit', compact('mapel', 'guru'));
+        return view('admin.mapel.edit', compact('mapel', 'guru', 'kelas'));
     }
 
-    public function update(Request $request, Mapel $mapel)
+    public function store(Request $request)
+{
+    if (!auth()->user()->isAdmin()) abort(403);
+
+    $request->validate([
+        'nama_mapel' => 'required|string|max:100|unique:mapel,nama_mapel',
+        'pairs'      => 'nullable|array',
+    ], [
+        'nama_mapel.required' => 'Nama mata pelajaran wajib diisi.',
+        'nama_mapel.string'   => 'Nama mata pelajaran harus berupa teks.',
+        'nama_mapel.max'      => 'Nama mata pelajaran maksimal 100 karakter.',
+        'nama_mapel.unique'   => 'Mata pelajaran dengan nama ini sudah terdaftar.',
+    ]);
+
+    $mapel = Mapel::create(['nama_mapel' => $request->nama_mapel]);
+    $this->savePairs($mapel->id, $request->input('pairs', []));
+
+    return redirect()->route('admin.mapel.index')
+        ->with('success', 'Mata pelajaran berhasil ditambahkan!');
+}
+
+public function update(Request $request, Mapel $mapel)
+{
+    if (!auth()->user()->isAdmin()) abort(403);
+
+    $request->validate([
+        'nama_mapel' => 'required|string|max:100|unique:mapel,nama_mapel,'.$mapel->id,
+        'pairs'      => 'nullable|array',
+    ], [
+        'nama_mapel.required' => 'Nama mata pelajaran wajib diisi.',
+        'nama_mapel.string'   => 'Nama mata pelajaran harus berupa teks.',
+        'nama_mapel.max'      => 'Nama mata pelajaran maksimal 100 karakter.',
+        'nama_mapel.unique'   => 'Nama mata pelajaran sudah digunakan oleh mapel lain.',
+    ]);
+
+    $mapel->update(['nama_mapel' => $request->nama_mapel]);
+    GuruMapelKelas::where('mapel_id', $mapel->id)->delete();
+    $this->savePairs($mapel->id, $request->input('pairs', []));
+
+    return redirect()->route('admin.mapel.index')
+        ->with('success', 'Mata pelajaran berhasil diperbarui!');
+}
+
+public function destroy(Mapel $mapel)
+{
+    if (!auth()->user()->isAdmin()) abort(403);
+
+    GuruMapelKelas::where('mapel_id', $mapel->id)->delete();
+    $mapel->delete();
+
+    return back()->with('success', 'Mata pelajaran berhasil dihapus!');
+}
+
+    /**
+     * Simpan dari format pairs[guru_id][] = kelas_id.
+     * Tiap pasangan guru-kelas = 1 baris di guru_mapel_kelas.
+     * Guru yang tidak ada di $pairs (tidak centang apapun) tidak disimpan.
+     */
+    private function savePairs(int $mapelId, array $pairs): void
     {
-        if (!auth()->user()->isAdmin()) {
-            abort(403);
+        foreach ($pairs as $guruId => $kelasIds) {
+            if (empty($kelasIds)) continue;
+
+            foreach ($kelasIds as $kelasId) {
+                GuruMapelKelas::create([
+                    'guru_id'  => $guruId,
+                    'mapel_id' => $mapelId,
+                    'kelas_id' => $kelasId,
+                ]);
+            }
         }
-
-        $request->validate([
-            'nama_mapel' => 'required|string|max:100|unique:mapel,nama_mapel,' . $mapel->id,
-            'guru_id' => 'nullable|array',
-            'guru_id.*' => 'exists:users,id',
-        ]);
-
-        $mapel->update([
-            'nama_mapel' => $request->nama_mapel
-        ]);
-
-        $mapel->guru()->sync($request->guru_id ?? []);
-
-        return redirect()->route('admin.mapel.index')
-            ->with('success', 'Mata pelajaran ' . $request->nama_mapel . ' berhasil diupdate!');
-    }
-
-    public function destroy(Mapel $mapel)
-    {
-        if (!auth()->user()->isAdmin()) {
-            abort(403);
-        }
-
-        // ✅ UPDATE: Hapus relasi guru dulu sebelum hapus mapel
-        $mapel->guru()->detach();
-        $nama = $mapel->nama_mapel;
-        $mapel->delete();
-
-        return back()->with('success', 'Mata pelajaran ' . $nama . ' berhasil dihapus!');
-    }
-
-    public function assignGuru(Request $request, Mapel $mapel)
-    {
-        if (!auth()->user()->isAdmin()) {
-            abort(403);
-        }
-
-        $request->validate([
-            'guru_id' => 'required|exists:users,id|in:' . User::where('role', 'guru')->pluck('id')->implode(',')
-        ]);
-
-        // Attach guru (hindari duplicate)
-        $mapel->guru()->syncWithoutDetaching($request->guru_id);
-
-        return back()->with('success', 'Guru berhasil ditugaskan ke ' . $mapel->nama_mapel);
-    }
-
-    // ✅ METHOD BARU: Hapus Guru dari Mapel
-    public function removeGuru(Request $request, Mapel $mapel, User $user)
-    {
-        if (!auth()->user()->isAdmin()) {
-            abort(403);
-        }
-
-        if ($user->role !== 'guru') {
-            return back()->with('error', 'Bukan guru!');
-        }
-
-        $mapel->guru()->detach($user->id);
-        return back()->with('success', $user->nama . ' dihapus dari ' . $mapel->nama_mapel);
     }
 }

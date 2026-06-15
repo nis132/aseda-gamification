@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('leaderboard', function (Blueprint $table) {
-            $table->integer('rank')->default(0)->after('total_poin');
-            $table->index(['kelas_id', 'total_poin']); // Speedup query
-        });
+        Schema::table('guru_mapel_kelas', function (Blueprint $table) {
+        $table->unsignedBigInteger('guru_id')->nullable()->change();
+        $table->unsignedBigInteger('kelas_id')->nullable()->change();
+    });
     }
 
     /**
@@ -22,8 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('leaderboard', function (Blueprint $table) {
-            //
-        });
+        //
     }
 };

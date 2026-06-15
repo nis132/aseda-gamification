@@ -21,7 +21,6 @@ public function headings(): array
         'username',
         'password',
         'role',
-        'total_poin',
         'level'
     ];
 }

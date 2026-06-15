@@ -15,12 +15,12 @@ class SiswaExport implements FromArray, WithHeadings
 public function headings(): array
 {
     return [
+        'nis',
         'nama',
         'username',
         'password',
         'role',
         'kelas',
-        'total_poin',
         'level'
     ];
 }

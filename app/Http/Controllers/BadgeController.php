@@ -1,141 +1,71 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use App\Models\SiswaBadge;
 use App\Models\Badge;
-use App\Models\NilaiTantangan;
-use App\Models\Tantangan;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BadgeController extends Controller
 {
-    /**
-     * Menampilkan koleksi badge milik siswa
-     */
     public function index()
-    {
-        $siswaId = Auth::id();
+        {
+            $siswa   = auth()->user();
+            $kelasId = \App\Models\SiswaKelas::where('siswa_id', $siswa->id)->value('kelas_id');
 
-        // Ambil semua badge yang dimiliki, grupkan berdasarkan badge_id
-        $ownedBadges = SiswaBadge::with('badge')
-            ->where('siswa_id', $siswaId)
-            ->get()
-            ->groupBy('badge_id');
+            $mapelIds = \App\Models\Tantangan::where('kelas_id', $kelasId)
+                ->distinct()
+                ->pluck('mapel_id');
 
-        return view('badge.index', compact('ownedBadges'));
-    }
-
-    /**
-     * Logika Otomatis: Cek kriteria badge setelah submit tugas
-     * Panggil ini di SiswaController@submit
-     */
-    public static function checkAndGiveBadge($siswaId, $tantanganId)
-    {
-        $tantangan = Tantangan::find($tantanganId);
-        if (!$tantangan) return;
-
-        $mapelId = $tantangan->mapel_id;
-
-        // =========================
-        // 1. BADGE CAPAIAN (>=80)
-        // =========================
-        $nilai = NilaiTantangan::where('siswa_id', $siswaId)
-            ->where('tantangan_id', $tantanganId)
-            ->first();
-
-        if ($nilai && $nilai->total_nilai >= 80) {
-            self::assignBadge($siswaId, 'capaian', $tantanganId);
-        }
-
-        // =========================
-        // 2. BADGE KEAKTIFAN (3x berturut-turut tepat waktu)
-        // =========================
-        $riwayat = NilaiTantangan::where('siswa_id', $siswaId)
-            ->whereHas('tantangan', function ($q) use ($mapelId) {
-                $q->where('mapel_id', $mapelId);
-            })
-            ->with('tantangan')
-            ->orderBy('waktu_submit', 'desc')
-            ->get();
-
-        $count = 0;
-
-        foreach ($riwayat as $item) {
-
-            if (
-                $item->waktu_submit &&
-                $item->tantangan->batas_waktu &&
-                Carbon::parse($item->waktu_submit)
-                    ->lte(Carbon::parse($item->tantangan->batas_waktu))
-            ) {
-                $count++;
-            } else {
-                break;
+            foreach ($mapelIds as $mapelId) {
+                \App\Services\BadgeService::checkAll($siswa->id, $mapelId);
             }
 
-            if ($count >= 3) {
-                self::assignBadge($siswaId, 'keaktifan', $tantanganId);
-                break;
-            }
+            $levelSiswa  = $siswa->hitungLevel($kelasId);
+            $allBadges   = Badge::orderBy('level_required')->orderBy('id')->get();
+            $ownedBadges = SiswaBadge::with('badge')
+                ->where('siswa_id', $siswa->id)
+                ->get()
+                ->groupBy('badge_id');
+
+            $badgeDiraih = $allBadges->filter(fn($b) => $ownedBadges->has($b->id));
+            $badgeBelum  = $allBadges->filter(fn($b) => !$ownedBadges->has($b->id));
+
+            return view('badge.index', compact('allBadges', 'ownedBadges', 'levelSiswa', 'badgeDiraih', 'badgeBelum'));
         }
+    
+ 
+    public function sertifikat(int $badgeId)
+    {
+        $badge = Badge::findOrFail($badgeId);
+        abort_if(!$badge->ada_sertifikat, 403, 'Badge ini tidak memiliki sertifikat.');
 
-        // =========================
-        // 3. LEVEL SYSTEM
-        // =========================
-        $totalMateri = DB::table('materi_selesai')
-            ->join('materi', 'materi_selesai.materi_id', '=', 'materi.id')
-            ->where('materi_selesai.siswa_id', $siswaId)
-            ->where('materi.mapel_id', $mapelId)
-            ->count();
+        $siswaBadge = SiswaBadge::where('siswa_id', auth()->id())
+            ->where('badge_id', $badgeId)
+            ->firstOrFail();
 
-        $totalTantangan = NilaiTantangan::where('siswa_id', $siswaId)
-            ->whereHas('tantangan', function ($q) use ($mapelId) {
-                $q->where('mapel_id', $mapelId);
-            })
-            ->count();
+        $siswa = auth()->user();
 
-        $level = 1;
-
-        if ($totalMateri >= 12 && $totalTantangan >= 12) {
-            $level = 5;
-        } elseif ($totalMateri >= 9 && $totalTantangan >= 9) {
-            $level = 4;
-        } elseif ($totalMateri >= 6 && $totalTantangan >= 6) {
-            $level = 3;
-        } elseif ($totalMateri >= 3 && $totalTantangan >= 3) {
-            $level = 2;
-        }
-
-        DB::table('users')
-            ->where('id', $siswaId)
-            ->update(['level' => $level]);
+        return view('badge.sertifikat', compact('badge', 'siswaBadge', 'siswa'));
     }
 
-    /**
-     * Simpan badge ke user jika belum punya untuk tantangan tersebut
-     */
-private static function assignBadge($siswaId, $namaBadge, $tantanganId)
-{
-    $badge = Badge::where('nama_badge', $namaBadge)->first();
+    public function downloadSertifikat(int $badgeId)
+    {
+        $badge = Badge::findOrFail($badgeId);
+        abort_if(!$badge->ada_sertifikat, 403, 'Badge ini tidak memiliki sertifikat.');
 
-    if (!$badge) return;
+        $siswaBadge = SiswaBadge::where('siswa_id', auth()->id())
+            ->where('badge_id', $badgeId)
+            ->firstOrFail();
 
-    $exists = SiswaBadge::where('siswa_id', $siswaId)
-        ->where('badge_id', $badge->id)
-        ->where('tantangan_id', $tantanganId)
-        ->exists();
+        $siswa = auth()->user();
 
-    if (!$exists) {
-        SiswaBadge::create([
-            'siswa_id' => $siswaId,
-            'badge_id' => $badge->id,
-            'tantangan_id' => $tantanganId,
-            'is_new' => true
-        ]);
+        $pdf = Pdf::loadView('badge.sertifikat-pdf', compact('badge', 'siswaBadge', 'siswa'))
+            ->setPaper('a4', 'landscape');
+
+        $filename = 'Sertifikat_'
+            . str_replace(' ', '_', $badge->nama_badge) . '_'
+            . str_replace(' ', '_', $siswa->nama) . '.pdf';
+
+        return $pdf->download($filename);
     }
-}
 }

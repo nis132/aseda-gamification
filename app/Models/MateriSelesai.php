@@ -10,7 +10,12 @@ class MateriSelesai extends Model
 
     protected $fillable = [
         'siswa_id',
-        'materi_id'
+        'materi_id',
+        'poin',
+    ];
+
+    protected $casts = [
+        'poin' => 'integer',
     ];
 
     public function siswa()

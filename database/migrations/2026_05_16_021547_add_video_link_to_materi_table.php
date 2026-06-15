@@ -1,24 +1,23 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::table('materi', function (Blueprint $table) {
-            $table->foreignId('kelas_id')->nullable()->after('id')
-                  ->constrained('kelas')->onDelete('cascade');
-            $table->index('kelas_id');
+            $table->string('video_url')->nullable()->after('file_url');       // YouTube embed URL
+            $table->string('link_referensi')->nullable()->after('video_url'); // link eksternal
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::table('materi', function (Blueprint $table) {
-            $table->dropForeign(['kelas_id']);
-            $table->dropColumn('kelas_id');
+            $table->dropColumn(['video_url', 'link_referensi']);
         });
     }
 };

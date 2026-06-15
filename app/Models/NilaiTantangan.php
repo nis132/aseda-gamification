@@ -13,13 +13,17 @@ class NilaiTantangan extends Model
         'tantangan_id',
         'total_nilai',
         'poin_didapat',
-        'waktu_submit'
+        'waktu_submit',
+        'is_pending',
+        'review_dibuka_pada',
     ];
 
     protected $casts = [
-        'total_nilai' => 'decimal:2',
+        'total_nilai'  => 'decimal:2',
         'poin_didapat' => 'integer',
-        'waktu_submit' => 'datetime'
+        'waktu_submit' => 'datetime',
+        'is_pending'   => 'boolean',
+        'review_dibuka_pada' => 'datetime',
     ];
 
     public function siswa()

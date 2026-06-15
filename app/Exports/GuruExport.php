@@ -10,20 +10,17 @@ class GuruExport implements FromArray, WithHeadings
     public function array(): array
     {
         return [
-            // contoh isi biar user paham
-            ['M. Yahya', 'm_yahya', 'pass123', 'Matematika', 0, 1]
+            ['35060110','M. Yahya', 'm_yahya', 'password']
         ];
     }
 
     public function headings(): array
     {
         return [
+            'nip',
             'nama',
             'username',
-            'password',
-            'mapel', // 🔥 ganti dari mapel_id
-            'total_poin',
-            'level'
+            'password'
         ];
     }
 }

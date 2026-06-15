@@ -3,26 +3,40 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class PushNotificationController extends Controller
 {
     /**
-     * Menyimpan data subscription browser ke database
+     * Simpan subscription browser ke database
      */
-public function subscribe(Request $request)
-{
-    // Cek apakah data sampai di sini
-    // \Log::info($request->all()); 
+    public function subscribe(Request $request)
+    {
+        $endpoint = $request->endpoint;
+        $key      = $request->keys['p256dh'];
+        $token    = $request->keys['auth'];
 
-    $endpoint = $request->endpoint;
-    $key = $request->keys['p256dh'];
-    $token = $request->keys['auth'];
+        $request->user()->updatePushSubscription($endpoint, $key, $token);
 
-    // Ini fungsi bawaan dari Trait HasPushSubscriptions
-    // Dia akan otomatis menyimpan ke tabel 'push_subscriptions'
-    $request->user()->updatePushSubscription($endpoint, $key, $token);
+        return response()->json(['success' => true]);
+    }
 
-    return response()->json(['success' => true]);
-}
+    /**
+     * Cek apakah subscription milik user ini masih ada di DB.
+     * Dipanggil dari JS sebelum re-subscribe (Bug 4 fix).
+     */
+    public function verify(Request $request)
+    {
+        $endpoint = $request->input('endpoint');
+
+        if (!$endpoint) {
+            return response()->json(['valid' => false]);
+        }
+
+        $exists = $request->user()
+            ->pushSubscriptions()
+            ->where('endpoint', $endpoint)
+            ->exists();
+
+        return response()->json(['valid' => $exists]);
+    }
 }

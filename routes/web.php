@@ -14,17 +14,14 @@ use App\Http\Controllers\Guru\SoalController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\Guru\PenilaianController;
-    use App\Exports\AdminTemplateExport;
+use App\Http\Controllers\Guru\ProfilGuruController;
+use App\Exports\AdminTemplateExport;
 use App\Exports\GuruTemplateExport;
 use App\Exports\SiswaTemplateExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\PushNotificationController;
 
 Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::get('/login', function () {
     return redirect()->route('login');
 });
 
@@ -82,7 +79,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
     
-
     // Kelas
     Route::get('/kelas', [App\Http\Controllers\Admin\KelasController::class, 'index'])->name('kelas.index');
     Route::get('/kelas/create', [App\Http\Controllers\Admin\KelasController::class, 'create'])->name('kelas.create');
@@ -107,7 +103,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/mapel/{mapel}/assign-guru', [MapelController::class, 'assignGuru'])->name('mapel.assignGuru');
     Route::delete('/mapel/{mapel}/guru/{user}', [MapelController::class, 'removeGuru'])->name('mapel.removeGuru');
 
-        // EXPORT
+    // EXPORT
     Route::get('/export-admin', [UserController::class, 'exportAdmin'])->name('export.admin');
     Route::get('/export-guru', [UserController::class, 'exportGuru'])->name('export.guru');
     Route::get('/export-siswa', [UserController::class, 'exportSiswa'])->name('export.siswa');
@@ -125,7 +121,12 @@ Route::middleware(['auth'])->group(function () {
     // Guru Routes
     Route::prefix('guru')->name('guru.')->group(function () {
 
+        Route::get('/rekap-nilai', [\App\Http\Controllers\Guru\RekapNilaiController::class, 'index'])->name('rekap.index');
+        Route::get('/rekap-nilai/export', [\App\Http\Controllers\Guru\RekapNilaiController::class, 'export'])->name('rekap.export');
+
         Route::get('/dashboard', [App\Http\Controllers\Guru\DashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/leaderboard', [LeaderboardController::class, 'guru'])->name('leaderboard');
 
         Route::get('/tantangan', [App\Http\Controllers\Guru\TantanganController::class, 'index'])->name('tantangan.index');
         Route::get('/tantangan/create', [App\Http\Controllers\Guru\TantanganController::class, 'create'])->name('tantangan.create');
@@ -135,31 +136,39 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/tantangan/{tantangan}/edit', [App\Http\Controllers\Guru\TantanganController::class, 'edit'])->name('tantangan.edit');
         Route::put('/tantangan/{tantangan}', [App\Http\Controllers\Guru\TantanganController::class, 'update'])->name('tantangan.update');
         Route::delete('/tantangan/{tantangan}', [App\Http\Controllers\Guru\TantanganController::class, 'destroy'])->name('tantangan.destroy');
+        Route::get('/tantangan/{tantangan}/pengayaan/create', [App\Http\Controllers\Guru\TantanganController::class, 'createPengayaan'])->name('tantangan.pengayaan.create');
+        Route::post('/tantangan/{tantangan}/pengayaan', [App\Http\Controllers\Guru\TantanganController::class, 'storePengayaan'])->name('tantangan.pengayaan.store');
 
         Route::get('/tantangan/{tantangan}/soal/create', [App\Http\Controllers\Guru\SoalController::class, 'create'])->name('soal.create');
         Route::post('/tantangan/{tantangan}/soal', [App\Http\Controllers\Guru\SoalController::class, 'store'])->name('soal.store');
+
+        Route::get('/guru/tantangan/{tantangan}/soal/template/{tipe}', [SoalController::class, 'downloadTemplate'])->name('soal.template');
 
         Route::post('guru/tantangan/{tantangan}/soal', [SoalController::class, 'store'])->name('guru.soal.store');
         Route::get('guru/tantangan/{tantangan}/soal/create', [SoalController::class, 'create'])->name('guru.soal.create');
         Route::post('tantangan/{tantangan}/soal', [SoalController::class, 'store'])->name('soal.store');
         Route::post('tantangan/{tantangan}/publish', [TantanganController::class, 'publish']);
 
-            // 🔥 EDIT
     Route::get('/tantangan/{tantangan}/soal/{soal}/edit', [SoalController::class, 'edit'])->name('soal.edit');
 
-    // 🔥 UPDATE
     Route::put('/tantangan/{tantangan}/soal/{soal}', [SoalController::class, 'update'])->name('soal.update');
 
         Route::delete('/tantangan/{tantangan}/soal/{soal}', 
         [SoalController::class, 'destroy']
     )->name('soal.destroy');
 
-
+    Route::get('/profil', [ProfilGuruController::class, 'index'])->name('profil');
+    Route::put('/profil', [ProfilGuruController::class, 'update'])->name('profil.update');
+    Route::put('/profil/password', [ProfilGuruController::class, 'updatePassword'])->name('profil.password');
+ 
         // Kelas
         Route::resource('kelas', KelasController::class)->only(['index', 'show']);
 
         // Materi - RESOURCE FULL CRUD
         Route::resource('materi', MateriController::class);
+        
+        Route::post('materi/{materi}/kirim-ke-kelas', [MateriController::class, 'kirimKeKelas'])
+    ->name('materi.kirim');
 
         // Tantangan - RESOURCE FULL CRUD
         Route::resource('tantangan', TantanganController::class);
@@ -179,7 +188,10 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::post('guru/tantangan/{tantangan}/publish', [TantanganController::class, 'publish']);
-    Route::post('guru/tantangan/{tantangan}/unpublish', [TantanganController::class, 'unpublish']);
+        Route::post(
+        '/tantangan/{id}/unpublish/{kelasId}',
+        [TantanganController::class, 'unpublish']
+    )->name('guru.tantangan.unpublish');
 
     Route::get('guru/tantangan/{id}/nilai', 
     [PenilaianController::class, 'index'])->name('guru.nilai.index');
@@ -195,6 +207,13 @@ Route::get('guru/tantangan/{id}/nilai/{siswa}',
     'guru/tantangan/{id}/nilai/{siswa}',
     [PenilaianController::class, 'simpanNilai']
 )->name('guru.nilai.simpan');
+
+Route::post('/leaderboard/kunci', [LeaderboardController::class, 'kunci'])
+    ->name('leaderboard.kunci');
+
+    // Routes untuk buka/tutup review
+    Route::post('guru/tantangan/{id}/review/buka', [PenilaianController::class, 'bukaReview'])->name('guru.review.buka');
+    Route::post('guru/tantangan/{id}/review/tutup', [PenilaianController::class, 'tutupReview'])->name('guru.review.tutup');
 
 
 });
@@ -214,22 +233,31 @@ Route::middleware(['auth', 'role:siswa'])
 Route::match(['POST', 'GET'], '/tantangan/{tantangan}/submit', [SiswaController::class, 'submit'])->name('tantangan.submit');        
         Route::get('/profil', [SiswaController::class, 'profil'])->name('profil');
 
+        Route::get('/badge-validasi', [SiswaController::class, 'badgeValidasi'])->name('badge.validasi');
+
             Route::get('/materi', [SiswaController::class, 'materi'])->name('materi');
     Route::get('/materi/{materi}', [SiswaController::class, 'materiShow'])->name('materi.show');
     });
 
-    Route::get('/leaderboard', 
+Route::get('/leaderboard',
     [LeaderboardController::class, 'index']
 )->name('leaderboard');
 
+Route::get('/leaderboard/sertifikat-juara', [LeaderboardController::class, 'sertifikatJuara'])
+    ->name('leaderboard.sertifikat-juara');
+
 Route::get('/badge', [BadgeController::class, 'index'])
     ->name('badge');
+
+Route::get('/badge/{badgeId}/sertifikat',          [BadgeController::class, 'sertifikat'])->name('badge.sertifikat');
+Route::get('/badge/{badgeId}/sertifikat/download', [BadgeController::class, 'downloadSertifikat'])->name('badge.sertifikat.download');
 
 Route::post('/siswa/materi/{materi}/selesai', [SiswaController::class, 'selesai'])
     ->name('siswa.materi.selesai');
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/subscribe', [App\Http\Controllers\PushNotificationController::class, 'subscribe']);
+    Route::post('/notifications/verify',    [App\Http\Controllers\PushNotificationController::class, 'verify']);
 });
 
 Route::post('/siswa/badge/mark-as-seen/{id}', function($id) {
@@ -247,3 +275,5 @@ Route::get('/siswa/tantangan/{tantangan}/review',
     [SiswaController::class, 'review']
 )->name('siswa.tantangan.review');
 
+Route::post('/siswa/badge/mark-as-seen/{id}', [BadgeController::class, 'markAsSeen'])
+    ->middleware('auth');

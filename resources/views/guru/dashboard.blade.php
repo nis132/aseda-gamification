@@ -3,146 +3,259 @@
 @section('title', 'Dashboard Guru')
 
 @section('content')
-<div class="row g-4">
-    {{-- STATS: TOTAL TANTANGAN --}}
+
+{{-- WELCOME BANNER --}}
+<div class="card border-0 mb-4 overflow-hidden"
+     style="background: linear-gradient(135deg, var(--clr-primary) 0%, #7c3aed 100%);">
+    <div class="card-body p-4">
+        <div class="row align-items-center g-3">
+            <div class="col-md-9">
+                <p class="mb-1" style="color: rgba(255,255,255,0.65); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+                    Selamat datang
+                </p>
+                <h2 class="fw-bold mb-1 text-white">{{ auth()->user()->nama }}</h2>
+                <p class="mb-0" style="color: rgba(255,255,255,0.7); font-size: 0.875rem;">
+                    Siap menginspirasi siswa hari ini? Kelola tantangan dan materi di sini.
+                </p>
+            </div>
+            <div class="col-md-3 text-md-end">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill"
+                     style="background: rgba(255,255,255,0.15); backdrop-filter: blur(4px);">
+                    <i class="fas fa-calendar-alt" style="color: rgba(255,255,255,0.8); font-size: 0.85rem;"></i>
+                    <span style="color: rgba(255,255,255,0.9); font-size: 0.8rem; font-weight: 600;">
+                        {{ now()->translatedFormat('d M Y') }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- STAT CARDS --}}
+<div class="row g-3 mb-4">
     <div class="col-lg-4 col-md-6">
-        <div class="card stat-card text-white h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-tasks fa-3x mb-3 opacity-75"></i>
-                <h3 class="fw-bold mb-1 display-5">{{ number_format($tantanganCount ?? 0) }}</h3>
-                <p class="mb-0 fw-semibold fs-6">Total Tantangan</p>
-                <small class="opacity-75">Tantangan yang telah dibuat</small>
+        <div class="card card-stat border-0 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon stat-icon-primary">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="text-label">Total Tantangan</div>
+                </div>
+                <div class="stat-number">{{ number_format($tantanganCount ?? 0) }}</div>
+                <small style="color: var(--clr-success); font-weight: 600; font-size: 0.78rem;">
+                    <i class="fas fa-plus me-1"></i>Misi aktif
+                </small>
             </div>
         </div>
     </div>
 
-    {{-- STATS: MAPEL DIAJAR --}}
     <div class="col-lg-4 col-md-6">
-        <div class="card stat-card text-white h-100" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-book fa-3x mb-3 opacity-75"></i>
-                <h3 class="fw-bold mb-1 display-5">{{ number_format($mapelCount ?? 0) }}</h3>
-                <p class="mb-0 fw-semibold fs-6">Mata Pelajaran</p>
-                <small class="opacity-75">Aktif di semester ini</small>
+        <div class="card card-stat border-0 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon stat-icon-success">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="text-label">Mata Pelajaran</div>
+                </div>
+                <div class="stat-number">{{ number_format($mapelCount ?? 0) }}</div>
+                <small style="color: var(--clr-primary); font-weight: 600; font-size: 0.78rem;">
+                    <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>Aktif diajar
+                </small>
             </div>
         </div>
     </div>
 
-    {{-- STATS: TOTAL MATERI (Opsional/Tambahan) --}}
     <div class="col-lg-4 col-md-12">
-        <div class="card stat-card text-white h-100" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-file-alt fa-3x mb-3 opacity-75 text-danger"></i>
-                <h3 class="fw-bold mb-1 display-5 text-danger">{{ $materiCount ?? 0 }}</h3>
-                <p class="mb-0 fw-semibold fs-6 text-danger">Total Materi</p>
-                <small class="text-danger opacity-75">Materi edukasi terunggah</small>
+        <div class="card card-stat border-0 h-100">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon stat-icon-warning">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="text-label">Materi</div>
+                </div>
+                <div class="stat-number">{{ $materiCount ?? 0 }}</div>
+                <small style="color: var(--clr-warning); font-weight: 600; font-size: 0.78rem;">
+                    <i class="fas fa-book-open me-1"></i>Materi
+                </small>
             </div>
         </div>
     </div>
+</div>
 
-    {{-- TANTANGAN TERBARU --}}
+<div class="row g-3">
+    {{-- AKTIVITAS TERBARU --}}
     <div class="col-lg-8">
-        <div class="card border-0 shadow-lg h-100">
-            <div class="card-header bg-gradient-primary text-white border-0 py-3">
-                <h5 class="mb-0 fw-bold"><i class="fas fa-history me-2"></i> Tantangan Terbaru</h5>
+        <div class="card border-0">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="stat-icon stat-icon-primary"
+                         style="width:32px; height:32px; font-size:0.85rem; border-radius:8px;">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h6 class="mb-0 fw-bold">Aktivitas Terbaru</h6>
+                </div>
+                <a href="{{ route('guru.tantangan.index') }}"
+                   class="btn btn-outline-primary btn-sm" style="border-radius: 99px; padding: 0.3rem 1rem;">
+                    Lihat Semua
+                </a>
             </div>
             <div class="card-body p-0">
-                @if(isset($recentTantangan) && $recentTantangan->count() > 0)
-                    @foreach($recentTantangan as $t)
-                    <div class="p-4 border-bottom hover-row">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-3 me-3">
-                                    <i class="fas {{ $t->tipe == 'pg' ? 'fa-list-ul' : 'fa-pen-fancy' }}"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-1 fw-bold">{{ Str::limit($t->judul, 40) }}</h6>
-                                    <div class="text-muted small">
-                                        <span class="me-3"><i class="fas fa-book me-1"></i>{{ $t->mapel->nama_mapel ?? '-' }}</span>
-                                        <span><i class="fas fa-users me-1"></i>{{ $t->kelas->nama_kelas ?? '-' }}</span>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <tbody>
+                            @forelse($recentTantangan ?? [] as $t)
+                            <tr>
+                                <td class="ps-4 py-3" style="width: 56px;">
+                                    <div class="icon-shape {{ $t->tipe == 'pg' ? 'stat-icon-primary' : 'stat-icon-warning' }}">
+                                        <i class="fas {{ $t->tipe == 'pg' ? 'fa-list-ul' : 'fa-pen-fancy' }}"></i>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge rounded-pill bg-{{ $t->tipe == 'pg' ? 'primary' : ($t->tipe == 'essay' ? 'warning' : 'info') }} mb-2">
-                                    {{ strtoupper($t->tipe) }}
-                                </span>
-                                <br>
-                                <a href="{{ route('guru.tantangan.show', $t->id) }}" class="btn btn-sm btn-light border">Detail</a>
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                @else
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
-                        <h5>Belum Ada Tantangan</h5>
-                        <p class="small">Mulai buat tantangan untuk siswa Anda!</p>
-                    </div>
-                @endif
-            </div>
-            <div class="card-footer bg-white border-0 text-center py-3">
-                <a href="{{ route('guru.tantangan.index') }}" class="text-primary fw-bold text-decoration-none">Lihat Semua Tantangan <i class="fas fa-arrow-right ms-1"></i></a>
+                                </td>
+                                <td>
+                                    <div class="fw-bold" style="font-size: 0.875rem; color: var(--txt-primary);">
+                                        {{ Str::limit($t->judul, 38) }}
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--txt-secondary);">
+                                        {{ $t->mapel->nama_mapel ?? '-' }}
+                                        <span class="mx-1">·</span>
+                                        {{ $t->kelas->nama_kelas ?? '-' }}
+                                    </div>
+                                </td>
+                                <td class="text-center" style="width: 90px;">
+                                    @if($t->tipe == 'pg')
+                                        <span class="badge" style="background: var(--clr-primary-light); color: var(--clr-primary);">PG</span>
+                                    @else
+                                        <span class="badge" style="background: #fef3c7; color: #92400e;">Esai</span>
+                                    @endif
+                                </td>
+                                <td class="pe-4 text-end" style="width: 100px;">
+                                    <a href="{{ route('guru.tantangan.show', $t->id) }}"
+                                       class="btn btn-light btn-action">
+                                        Detail
+                                    </a>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </div>
+                                        <h6>Belum ada tantangan</h6>
+                                        <p>Mulai dengan membuat tantangan pertama untuk siswa.</p>
+                                        <a href="{{ route('guru.tantangan.create') }}" class="btn btn-primary">
+                                            <i class="fas fa-plus me-2"></i>Buat Tantangan
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- PROFIL GURU SIDE --}}
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-lg h-100">
-            <div class="card-header bg-gradient-info text-white border-0 py-3">
-                <h6 class="mb-0 fw-bold"><i class="fas fa-user-circle me-2"></i> Identitas Guru</h6>
+    {{-- SIDEBAR KANAN --}}
+    <div class="col-lg-4 d-flex flex-column gap-3">
+        {{-- PROFIL --}}
+        <div class="card border-0">
+            <div class="text-center p-4"
+                 style="background: var(--clr-primary-light);
+                        border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;">
+                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->nama) }}&background=6366f1&color=fff&size=128"
+                     class="rounded-circle mb-2"
+                     style="width: 72px; height: 72px; border: 3px solid #fff; box-shadow: var(--shadow-sm);">
+                <h6 class="fw-bold mb-0">{{ auth()->user()->nama }}</h6>
+                <small style="color: var(--txt-secondary);">NIP. {{ auth()->user()->username }}</small>
             </div>
-            <div class="card-body p-4 text-center">
-                <div class="avatar-lg bg-info bg-opacity-10 text-info rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                    <i class="fas fa-chalkboard-teacher fa-3x"></i>
-                </div>
-                <h5 class="fw-bold mb-1">{{ auth()->user()->nama }}</h5>
-                <p class="text-muted small mb-4">NIP. {{ auth()->user()->username }}</p>
-
-                <div class="list-group list-group-flush text-start">
-                    <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center border-bottom">
-                        <span class="text-muted small">Status</span>
-                        <span class="badge bg-success-soft text-success fw-bold">Tenaga Pendidik</span>
+            <div class="card-body p-3">
+                <div class="d-flex flex-column gap-2 mb-3">
+                    <div class="d-flex justify-content-between align-items-center px-3 py-2 rounded-2"
+                         style="background: var(--bg-muted);">
+                        <span style="font-size: 0.8rem; color: var(--txt-secondary);">Jabatan</span>
+                        <span class="badge" style="background: #d1fae5; color: #065f46;">Guru Aktif</span>
                     </div>
-                    <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
-                        <span class="text-muted small">Tugas</span>
-                        <span class="fw-bold small text-primary">{{ $mapelCount ?? 0 }} Mata Pelajaran</span>
+                    <div class="d-flex justify-content-between align-items-center px-3 py-2 rounded-2"
+                         style="background: var(--bg-muted);">
+                        <span style="font-size: 0.8rem; color: var(--txt-secondary);">Aktivitas</span>
+                        <span style="font-size: 0.82rem; font-weight: 600;">Hari Ini</span>
                     </div>
                 </div>
-                
-                <div class="mt-4">
-                    <button class="btn btn-outline-info w-100 rounded-3">
-                        <i class="fas fa-user-edit me-2"></i> Update Profil
+                <div class="d-grid">
+                    <button class="btn btn-outline-primary btn-sm" style="border-radius: 99px;">
+                        <i class="fas fa-user-edit me-2"></i>Edit Profil
                     </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- AKSES CEPAT --}}
+        <div class="card border-0">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold" style="font-size: 0.875rem;">Akses Cepat</h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="{{ route('guru.rekap.index') }}"
+                           class="d-block p-3 text-center text-decoration-none border rounded-2 hover-lift"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-danger mx-auto mb-2"
+                                 style="width:36px; height:36px; font-size:0.9rem; border-radius:8px;">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div style="font-size: 0.78rem; font-weight: 600; color: var(--txt-primary);">
+                                Rekap Nilai
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ route('guru.tantangan.create') }}"
+                           class="d-block p-3 text-center text-decoration-none border rounded-2 hover-lift"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-primary mx-auto mb-2"
+                                 style="width:36px; height:36px; font-size:0.9rem; border-radius:8px;">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div style="font-size: 0.78rem; font-weight: 600; color: var(--txt-primary);">
+                                Tantangan
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/guru/materi"
+                           class="d-block p-3 text-center text-decoration-none border rounded-2 hover-lift"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-success mx-auto mb-2"
+                                 style="width:36px; height:36px; font-size:0.9rem; border-radius:8px;">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <div style="font-size: 0.78rem; font-weight: 600; color: var(--txt-primary);">
+                                Materi
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/guru/tantangan"
+                           class="d-block p-3 text-center text-decoration-none border rounded-2 hover-lift"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-warning mx-auto mb-2"
+                                 style="width:36px; height:36px; font-size:0.9rem; border-radius:8px;">
+                                <i class="fas fa-list-alt"></i>
+                            </div>
+                            <div style="font-size: 0.78rem; font-weight: 600; color: var(--txt-primary);">
+                                Semua Misi
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 @endsection
-
-@push('styles')
-<style>
-    .stat-card, .hover-lift {
-        border-radius: 20px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border: none !important;
-    }
-    .stat-card:hover, .hover-lift:hover {
-        transform: translateY(-8px) !important;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.12) !important;
-    }
-    .hover-row:hover {
-        background-color: rgba(102, 126, 234, 0.05);
-        transition: 0.2s;
-    }
-    .bg-gradient-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
-    .bg-gradient-info { background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%) !important; }
-    .display-5 { font-size: 2.5rem; font-weight: 800; }
-    .bg-success-soft { background-color: rgba(56, 239, 125, 0.15); }
-    .btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-warning:hover, .btn-outline-info:hover {
-        color: white !important;
-    }
-</style>
-@endpush

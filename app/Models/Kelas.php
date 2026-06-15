@@ -23,5 +23,9 @@ class Kelas extends Model
             'siswa_id'
         );
     }
+public function guruMapel()
+{
+    return $this->hasMany(GuruMapelKelas::class);
+}
 
 }

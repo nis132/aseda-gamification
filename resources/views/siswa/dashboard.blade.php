@@ -3,223 +3,448 @@
 @section('title', 'Dashboard Siswa')
 
 @section('content')
-<div class="row g-4">
-    {{-- TOTAL POIN CARD --}}
-    <div class="col-lg-3 col-md-6">
-        <div class="card stat-card text-white h-100" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-            <div class="card-body text-center position-relative p-4">
-                <div class="rank-badge bg-warning text-dark px-3 py-1 rounded-pill position-absolute top-0 end-0 me-3 mt-3 shadow">
-                    #{{ $rankKelas }}
-                </div>
-                <i class="fas fa-crown fa-3x mb-3 opacity-75"></i>
-                <h3 class="fw-bold mb-1 display-5">{{ number_format($totalPoin) }}</h3>
-                <p class="mb-1 fw-semibold fs-6">Total Poin</p>
-                <small class="opacity-75">Kelas {{ auth()->user()->kelasIds()->first() ?? '-' }}</small>
-            </div>
-        </div>
-    </div>
 
-    {{-- TANTANGAN AKTIF --}}
-    <div class="col-lg-3 col-md-6">
-        <div class="card stat-card bg-primary text-white h-100 border-0 shadow-lg">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-tasks fa-3x mb-3 opacity-75"></i>
-                <h3 class="fw-bold mb-1">{{ $tantanganAktif->where('batas_waktu', '>', now())->count() }}</h3>
-                <p class="mb-1 fw-semibold fs-6">Tantangan Aktif</p>
-                <small class="opacity-75">Buruan kerjakan!</small>
-            </div>
-        </div>
+{{-- PAGE HEADER --}}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            Halo, {{ auth()->user()->nama }}! 👋
+        </h1>
+        <p class="mb-0" style="color: var(--txt-secondary); font-size: 0.85rem;">
+            Selamat datang kembali di portal gamifikasi SMPN 2 Semen.
+        </p>
     </div>
+    <span class="badge" style="background: var(--bg-muted); color: var(--txt-secondary); border: 1px solid var(--border-color); font-weight: 500; font-size: 0.78rem;">
+        <i class="fas fa-calendar me-1"></i>{{ now()->translatedFormat('d M Y') }}
+    </span>
+</div>
 
-    {{-- ✅ FIX: TANTANGAN SELESAI - whereHas → filter --}}
-    <div class="col-lg-3 col-md-6">
-        <div class="card stat-card bg-warning text-white h-100 border-0 shadow-lg">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-star fa-3x mb-3 opacity-75"></i>
-                {{-- ✅ FIXED: Collection method untuk relation --}}
-                <h3 class="fw-bold mb-1">
-                    {{ $tantanganAktif->filter(function($tantangan) {
-                        return $tantangan->nilaiTantangan && $tantangan->nilaiTantangan->count() > 0;
-                    })->count() }}
-                </h3>
-                <p class="mb-1 fw-semibold fs-6">Selesai</p>
-                <small class="opacity-75">Kerja bagus! ⭐</small>
-            </div>
-        </div>
-    </div>
+{{-- FILTER MAPEL GLOBAL --}}
+<div class="card border-0 mb-4">
+    <div class="card-body p-3">
 
-    {{-- TANTANGAN TERLAMBAT --}}
-    <div class="col-lg-3 col-md-6">
-        <div class="card stat-card bg-danger text-white h-100 border-0 shadow-lg">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-exclamation-triangle fa-3x mb-3 opacity-75"></i>
-                <h3 class="fw-bold mb-1">{{ $tantanganAktif->where('batas_waktu', '<=', now())->count() }}</h3>
-                <p class="mb-1 fw-semibold fs-6">Terlambat</p>
-                <small class="opacity-75">Jangan tertinggal!</small>
-            </div>
-        </div>
-    </div>
+        <form method="GET" action="{{ route('siswa.dashboard') }}">
+            <div class="row align-items-center g-2">
 
-    {{-- TANTANGAN TERBARU --}}
-    <div class="col-12">
-        <div class="card border-0 shadow-lg h-100">
-            <div class="card-header bg-gradient-primary text-white border-0">
-                <h5 class="mb-0 fw-bold">
-                    <i class="fas fa-bolt me-2"></i> Tantangan Terbaru
-                </h5>
-            </div>
-            <div class="card-body p-0">
-                @forelse($tantanganAktif->take(5) as $tantangan)
-                <div class="p-4 border-bottom hover-row">
-                    <div class="row align-items-center g-3">
-                        <div class="col-md-2 col-3">
-                            <div class="bg-primary bg-opacity-20 text-primary rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 60px; height: 60px;">
-                                <i class="fas fa-rocket fa-lg"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-7 col-6">
-                            <h6 class="mb-1 fw-bold">{{ Str::limit($tantangan->judul, 50) }}</h6>
-                            <div class="row text-muted small g-1 mb-2">
-                                <div class="col-6">
-                                    <i class="fas fa-book me-1"></i>
-                                    {{ $tantangan->mapel->nama ?? '-' }}
-                                </div>
-                                <div class="col-6">
-                                    <i class="fas fa-user me-1"></i>
-                                    {{ $tantangan->guru->nama ?? '-' }}
-                                </div>
-                            </div>
-                            <div class="mb-2">
-                                <span class="badge bg-info me-1">{{ $tantangan->soal_count ?? 0 }} Soal</span>
-                                <span class="badge bg-warning text-dark">+{{ $tantangan->poin }} Poin</span>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-3 text-end">
-                            @if($tantangan->batas_waktu > now())
-                            <a href="{{ route('siswa.tantangan.kerjakan', $tantangan) }}" 
-                               class="btn btn-sm btn-primary px-3">
-                                <i class="fas fa-play me-1"></i> Kerjakan
-                            </a>
-                            @else
-                            <span class="badge bg-danger px-3 py-2 fs-6">Terlambat</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                @empty
-                <div class="text-center py-5">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3 opacity-50"></i>
-                    <h5 class="text-muted">Belum ada tantangan aktif</h5>
-                    <p class="text-muted mb-0">Periksa lagi nanti!</p>
-                </div>
-                @endforelse
-            </div>
-        </div>
-    </div>
+                <div class="col-md-3">
+                    <label class="fw-semibold mb-1"
+                           style="font-size: 0.82rem; color: var(--txt-secondary);">
+                        <i class="fas fa-filter me-1"></i>Filter Mata Pelajaran
+                    </label>
 
-    {{-- QUICK LINKS --}}
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-lg">
-            <div class="card-header bg-gradient-success text-white border-0">
-                <h5 class="mb-0 fw-bold"><i class="fas fa-chart-line me-2"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body p-4">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <a href="{{ route('siswa.materi') }}" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 rounded-3 border-0 shadow-sm hover-lift">
-                            <i class="fas fa-book fa-2x mb-2 text-primary"></i>
-                            <span class="fw-bold fs-6">Materi</span>
-                        </a>
-                    </div>
-                    <div class="col-md-4">
-                        <a href="{{ route('siswa.tantangan') }}" class="btn btn-warning btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 rounded-3 border-0 shadow-sm hover-lift">
-                            <i class="fas fa-tasks fa-2x mb-2 text-dark"></i>
-                            <span class="fw-bold fs-6 text-dark">Tantangan</span>
-                        </a>
-                    </div>
-                    <div class="col-md-4">
-                        <a href="{{ route('leaderboard') }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 rounded-3 border-0 shadow-sm hover-lift">
-                            <i class="fas fa-trophy fa-2x mb-2 text-info"></i>
-                            <span class="fw-bold fs-6">Leaderboard</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                    <select name="mapel"
+                            class="form-select"
+                            onchange="this.form.submit()"
+                            style="border-radius: 12px; font-size: 0.85rem;">
 
-    {{-- PROFIL --}}
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-lg h-100">
-            <div class="card-header bg-gradient-info text-white border-0">
-                <h6 class="mb-0 fw-bold">
-                    <i class="fas fa-user-circle me-2"></i> Profil Saya
-                </h6>
-            </div>
-            <div class="card-body p-4">
-                <div class="text-center mb-4">
-                    <div class="avatar-lg bg-primary bg-opacity-20 text-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                        <i class="fas fa-user fa-2x"></i>
-                    </div>
-                    <h5 class="fw-bold mb-1">{{ auth()->user()->nama }}</h5>
-                    <p class="text-muted mb-0">{{ ucfirst(auth()->user()->role) }}</p>
+                        <option value="">
+                            Semua Mata Pelajaran
+                        </option>
+
+                        @foreach($statsPerMapel as $stat)
+                            <option value="{{ $stat['mapel_id'] }}"
+                                {{ $selectedMapel == $stat['mapel_id'] ? 'selected' : '' }}>
+                                {{ $stat['nama_mapel'] }}
+                            </option>
+                        @endforeach
+
+                    </select>
                 </div>
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0 border-bottom py-3">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted"><i class="fas fa-chalkboard me-1"></i>Kelas</span>
-                            <span class="fw-bold text-primary">{{ auth()->user()->kelasIds()->first() ?? '-' }}</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0 border-bottom py-3">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted"><i class="fas fa-star me-1"></i>Total Poin</span>
-                            <span class="fw-bold text-warning fs-5">{{ number_format($totalPoin) }}</span>
-                        </div>
-                    </div>
-                    <div class="list-group-item px-0 py-3">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted"><i class="fas fa-trophy me-1"></i>Ranking Kelas</span>
-                            <span class="fw-bold text-success fs-6">#{{ $rankKelas }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4 pt-3 border-top">
-                    <a href="{{ route('siswa.profil') }}" class="btn btn-outline-primary w-100">
-                        <i class="fas fa-edit me-2"></i> Edit Profil
+
+                @if($selectedMapel)
+                <div class="col-md-auto">
+                    <label class="d-block mb-1 opacity-0">Reset</label>
+
+                    <a href="{{ route('siswa.dashboard') }}"
+                       class="btn btn-outline-secondary"
+                       style="border-radius: 12px;">
+                        <i class="fas fa-times me-1"></i>Reset
                     </a>
                 </div>
+                @endif
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+
+    {{-- TOTAL POIN --}}
+    <div class="col-lg-3 col-md-6">
+        <div class="card card-stat border-0 h-100"
+             style="border-left: 3px solid var(--clr-warning) !important; border-radius: var(--border-radius-lg);">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                    <div class="stat-icon stat-icon-warning">
+                        <i class="fas fa-crown"></i>
+                    </div>
+
+                    <span class="badge"
+                          style="background: #fef3c7; color: #92400e; font-weight: 700;">
+                        #{{ $rankKelas }}
+                    </span>
+                </div>
+
+                <div class="stat-number mb-1">
+                    {{ number_format($totalPoin) }}
+                </div>
+
+                <div class="text-label">Total Poin</div>
+
+                <small style="color: var(--txt-secondary); font-size: 0.78rem;">
+                    Ranking kelas
+                </small>
             </div>
         </div>
     </div>
+
+    {{-- TANTANGAN SELESAI --}}
+    <div class="col-lg-3 col-md-6">
+        <div class="card card-stat border-0 h-100"
+             style="border-left: 3px solid var(--clr-primary) !important; border-radius: var(--border-radius-lg);">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                    <div class="stat-icon stat-icon-primary">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+
+                <div class="stat-number mb-1">
+                    {{ $totalTantanganSelesai }}<span style="font-size: 0.5em; color: var(--txt-secondary);">/{{ $totalTantanganTersedia }}</span>
+                </div>
+
+                <div class="text-label">Tantangan Selesai</div>
+
+                <div style="margin-top: 0.75rem;">
+                    <div class="progress" style="height: 6px; border-radius: 3px; background: var(--bg-muted); overflow: hidden;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ $persenTantangan }}%; background: var(--clr-primary);"
+                             aria-valuenow="{{ $persenTantangan }}" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <small style="color: var(--clr-primary); font-size: 0.75rem; font-weight: 600; display: inline-block; margin-top: 0.35rem;">
+                        {{ $persenTantangan }}%
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- MATERI SELESAI --}}
+    <div class="col-lg-3 col-md-6">
+        <div class="card card-stat border-0 h-100"
+             style="border-left: 3px solid var(--clr-success) !important; border-radius: var(--border-radius-lg);">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                    <div class="stat-icon stat-icon-success">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                </div>
+
+                <div class="stat-number mb-1">
+                    {{ $totalMateriSelesai }}<span style="font-size: 0.5em; color: var(--txt-secondary);">/{{ $totalMateriTersedia }}</span>
+                </div>
+
+                <div class="text-label">Materi Selesai</div>
+
+                <div style="margin-top: 0.75rem;">
+                    <div class="progress" style="height: 6px; border-radius: 3px; background: var(--bg-muted); overflow: hidden;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ $persenMateri }}%; background: var(--clr-success);"
+                             aria-valuenow="{{ $persenMateri }}" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <small style="color: var(--clr-success); font-size: 0.75rem; font-weight: 600; display: inline-block; margin-top: 0.35rem;">
+                        {{ $persenMateri }}%
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- BELUM SELESAI --}}
+    <div class="col-lg-3 col-md-6">
+        <div class="card card-stat border-0 h-100"
+             style="border-left: 3px solid var(--clr-danger) !important; border-radius: var(--border-radius-lg);">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                    <div class="stat-icon stat-icon-danger">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                </div>
+
+                <div class="stat-number mb-1">
+                    {{ $totalBelumSelesai }}<span style="font-size: 0.5em; color: var(--txt-secondary);">/{{ $totalTantanganTersedia }}</span>
+                </div>
+
+                <div class="text-label">Belum Selesai</div>
+
+                <div style="margin-top: 0.75rem;">
+                    <div class="progress" style="height: 6px; border-radius: 3px; background: var(--bg-muted); overflow: hidden;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<div class="row g-3">
+
+    {{-- TANTANGAN TERBARU --}}
+    <div class="col-lg-8">
+        <div class="card border-0 h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="stat-icon stat-icon-warning"
+                         style="width:32px; height:32px; font-size:0.85rem; border-radius:8px;">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h6 class="mb-0 fw-bold">Tantangan Terbaru</h6>
+                </div>
+                <a href="{{ route('siswa.tantangan') }}"
+                   class="btn btn-outline-primary btn-sm" style="border-radius: 99px; padding: 0.3rem 1rem;">
+                    Lihat Semua
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <tbody>
+                            @forelse($tantanganAktif->take(5) as $tantangan)
+                            <tr>
+                                <td class="ps-4 py-3" style="width: 60px;">
+                                    <div class="icon-shape stat-icon-primary">
+                                        <i class="fas fa-rocket"></i>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-truncate-2 mb-1" style="font-size: 0.875rem; max-width: 220px;">
+                                        {{ $tantangan->judul }}
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--txt-secondary);">
+                                        <i class="fas fa-book-open me-1"></i>{{ $tantangan->mapel->nama_mapel ?? '-' }}
+                                        @if($tantangan->bab)
+                                            <span class="mx-1">·</span>
+                                            <i class="fas fa-layer-group me-1"></i>Bab {{ $tantangan->bab }}
+                                        @endif
+                                    </div>
+                                </td>
+                                <td style="width: 110px;">
+                                    <span class="badge" style="background: #dbeafe; color: #1e40af; font-size: 0.7rem;">
+                                        {{ $tantangan->soal_count ?? 0 }} Soal
+                                    </span>
+                                    <div style="font-size: 0.78rem; color: var(--clr-warning); font-weight: 600; margin-top: 3px;">
+                                        +{{ $tantangan->poin }} Poin
+                                    </div>
+                                </td>
+                                <td class="pe-4 text-end" style="width: 110px;">
+                                    @if($tantangan->batas_waktu > now())
+                                        @if($tantangan->nilaiTantangan->isEmpty())
+                                            <a href="{{ route('siswa.tantangan.kerjakan', $tantangan) }}"
+                                               class="btn btn-primary btn-action">
+                                                <i class="fas fa-play me-1"></i>Kerjakan
+                                            </a>
+                                        @else
+                                            <span class="badge" style="background: #d1fae5; color: #065f46; padding: 0.4em 0.75em;">
+                                                <i class="fas fa-check me-1"></i>Selesai
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="badge" style="background: #fee2e2; color: #991b1b; padding: 0.4em 0.75em;">
+                                            Terlambat
+                                        </span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <i class="fas fa-inbox"></i>
+                                        </div>
+                                        <h6>Belum ada tantangan aktif</h6>
+                                        <p>Cek kembali materi atau hubungi gurumu.</p>
+                                        <a href="{{ route('siswa.materi') }}" class="btn btn-primary btn-sm">
+                                            Lihat Materi
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SIDEBAR KANAN --}}
+    <div class="col-lg-4 d-flex flex-column gap-3">
+
+        <div class="card border-0">
+            <div class="card-header d-flex align-items-center gap-2">
+                <div class="stat-icon stat-icon-success"
+                     style="width:32px; height:32px; font-size:0.85rem; border-radius:8px;">
+                    <i class="fas fa-link"></i>
+                </div>
+                <h6 class="mb-0 fw-bold" style="font-size: 0.875rem;">Akses Cepat</h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="row g-2">
+                    <div class="col-4 text-center">
+                        <a href="{{ route('siswa.materi') }}"
+                           class="d-block p-2 text-decoration-none border rounded-2 hover-lift"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-primary mx-auto mb-1"
+                                 style="width:36px; height:36px; font-size:0.9rem; border-radius:8px;">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <span style="font-size: 0.72rem; font-weight: 600; color: var(--txt-primary);">Materi</span>
+                        </a>
+                    </div>
+                    <div class="col-4 text-center">
+                        <a href="{{ route('siswa.tantangan') }}"
+                           class="d-block p-2 text-decoration-none border rounded-2 hover-lift"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-warning mx-auto mb-1"
+                                 style="width:36px; height:36px; font-size:0.9rem; border-radius:8px;">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <span style="font-size: 0.72rem; font-weight: 600; color: var(--txt-primary);">Ujian</span>
+                        </a>
+                    </div>
+                    <div class="col-4 text-center">
+                        <a href="{{ route('leaderboard') }}"
+                           class="d-block p-2 text-decoration-none border rounded-2 hover-lift"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-info mx-auto mb-1"
+                                 style="width:36px; height:36px; font-size:0.9rem; border-radius:8px;">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <span style="font-size: 0.72rem; font-weight: 600; color: var(--txt-primary);">Skor</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0">
+            <div class="card-body p-4 text-center">
+                <div class="position-relative d-inline-block mb-3">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold shadow-sm"
+                         style="width: 72px; height: 72px; font-size: 1.5rem;
+                                background: linear-gradient(135deg, var(--clr-primary) 0%, #7c3aed 100%);">
+                        {{ strtoupper(substr(auth()->user()->nama, 0, 1)) }}
+                    </div>
+                    <div class="position-absolute bottom-0 end-0 rounded-circle"
+                         style="width: 16px; height: 16px; background: var(--clr-success); border: 2px solid white;"></div>
+                </div>
+                <h6 class="fw-bold mb-0">{{ auth()->user()->nama }}</h6>
+                <small style="color: var(--txt-secondary);">
+                    Kelas {{ auth()->user()->kelasIds()->first() ?? '-' }}
+                </small>
+                <div class="row g-2 my-3">
+                    <div class="col-6">
+                        <div class="p-2 rounded-2" style="background: var(--bg-muted);">
+                            <div style="font-size: 0.72rem; color: var(--txt-secondary);">Poin</div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: var(--txt-primary);">
+                                {{ number_format($totalPoin) }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded-2" style="background: var(--bg-muted);">
+                            <div style="font-size: 0.72rem; color: var(--txt-secondary);">Ranking</div>
+                            <div style="font-size: 0.95rem; font-weight: 700; color: var(--txt-primary);">
+                                #{{ $rankKelas }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ route('siswa.profil') }}"
+                   class="btn btn-outline-primary btn-sm w-100" style="border-radius: 99px;">
+                    <i class="fas fa-user-edit me-2"></i>Lihat Profil Lengkap
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
 @endsection
 
 @push('styles')
 <style>
-.stat-card, .hover-lift {
-    border-radius: 20px !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    overflow: hidden;
+.btn-mapel-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 99px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--txt-secondary);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    line-height: 1.4;
 }
-.stat-card:hover, .hover-lift:hover {
-    transform: translateY(-8px) !important;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.2) !important;
+.btn-mapel-chip:hover {
+    border-color: var(--clr-primary);
+    color: var(--txt-primary);
+    background: var(--bg-muted);
 }
-.rank-badge {
-    font-size: 0.85rem;
-    font-weight: 700;
+.btn-mapel-chip.active {
+    background: var(--clr-primary);
+    border-color: var(--clr-primary);
+    color: #fff;
 }
-.hover-row:hover {
-    background: linear-gradient(90deg, rgba(0,123,255,0.08), rgba(0,123,255,0.15)) !important;
-    border-radius: 12px !important;
-    transform: translateX(8px) !important;
-    transition: all 0.3s ease !important;
+.btn-mapel-chip.active .chip-count {
+    opacity: 0.8;
 }
-.bg-gradient-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
-.bg-gradient-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important; }
-.bg-gradient-info { background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%) !important; }
-.avatar-lg { font-size: 2.5rem; }
-.display-5 { font-size: 2.5rem; font-weight: 700; }
+.chip-count {
+    font-size: 0.72rem;
+    opacity: 0.6;
+}
+.chip-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.btn-mapel-chip.active .chip-dot {
+    background: rgba(255,255,255,0.8) !important;
+}
 </style>
+@endpush
+
+@push('scripts')
+<script>
+(function () {
+    const group   = document.getElementById('mapelFilterGroup');
+    const cards   = document.querySelectorAll('.mapel-card-col');
+    const buttons = group.querySelectorAll('.btn-mapel-chip');
+
+    function applyFilter(mapelId) {
+        cards.forEach(function (col) {
+            col.style.display = (mapelId === 'all' || col.dataset.mapel === String(mapelId)) ? '' : 'none';
+        });
+    }
+
+    buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            buttons.forEach(function (b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            applyFilter(this.dataset.mapel);
+        });
+    });
+})();
+</script>
 @endpush

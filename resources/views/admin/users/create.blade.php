@@ -3,390 +3,386 @@
 @section('title', 'Tambah User Baru')
 
 @section('content')
-<div class="row">
-    <div class="col-12">
-        <div class="card shadow border-0 rounded-4 overflow-hidden">
-            <div class="card-header bg-gradient-primary text-white py-3">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <h2 class="h4 mb-0 fw-bold">
-                            <i class="fas fa-user-plus me-2"></i>Tambah User Baru
-                        </h2>
-                        <p class="mb-0 small opacity-75">Pilih jenis user yang ingin ditambahkan</p>
-                    </div>
-                    <div class="col-auto">
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-white">
-                            <i class="fas fa-arrow-left me-2"></i>Kembali
-                        </a>
-                    </div>
-                </div>
-            </div>
 
-            {{-- ✅ ALERT GLOBAL --}}
-            @if(session('success'))
-                <div class="alert alert-success m-3">
-                    <i class="fas fa-check-circle me-2"></i>
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="alert alert-danger m-3">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="alert alert-danger m-3">
-                    <strong>Terjadi kesalahan:</strong>
-                    <ul class="mb-0 mt-2">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-<div class="bg-light p-3 border-bottom">
-
-    <!-- ADMIN -->
-    <div id="admin-tools" class="role-tools">
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('admin.export.admin') }}" class="btn btn-danger">
-                <i class="fas fa-download me-1"></i> Template Admin
-            </a>
-
-            <form action="{{ route('admin.import.admin') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
-                @csrf
-                <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
-                <button type="submit" class="btn btn-outline-danger">
-                    <i class="fas fa-file-import me-1"></i> Import Admin
-                </button>
-            </form>
-        </div>
+{{-- PAGE HEADER --}}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Tambah User Baru</h1>
+        <p class="mb-0" style="color: var(--txt-secondary); font-size: 0.85rem;">
+            Daftarkan akun Admin, Guru, atau Siswa secara manual maupun via import Excel.
+        </p>
     </div>
-
-    <!-- GURU -->
-    <div id="guru-tools" class="role-tools d-none">
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('admin.export.guru') }}" class="btn btn-success">
-                <i class="fas fa-download me-1"></i> Template Guru
-            </a>
-
-            <form action="{{ route('admin.import.guru') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
-                @csrf
-                <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
-                <button type="submit" class="btn btn-outline-success">
-                    <i class="fas fa-file-import me-1"></i> Import Guru
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- SISWA -->
-    <div id="siswa-tools" class="role-tools d-none">
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('admin.export.siswa') }}" class="btn btn-primary">
-                <i class="fas fa-download me-1"></i> Template Siswa
-            </a>
-
-            <form action="{{ route('admin.import.siswa') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2">
-                @csrf
-                <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
-                <button type="submit" class="btn btn-outline-primary">
-                    <i class="fas fa-file-import me-1"></i> Import Siswa
-                </button>
-            </form>
-        </div>
-    </div>
-
+    <a href="{{ route('admin.users.index') }}" class="btn btn-light">
+        <i class="fas fa-arrow-left me-2"></i>Kembali
+    </a>
 </div>
 
-            <div class="card-body p-0">
-                <!-- Nav Tabs -->
-                <ul class="nav nav-tabs border-0 mb-0 bg-light" id="userTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active fw-bold" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button">
-                            <i class="fas fa-user-shield text-danger me-2"></i>Admin
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold" id="guru-tab" data-bs-toggle="tab" data-bs-target="#guru" type="button">
-                            <i class="fas fa-chalkboard-teacher text-success me-2"></i>Guru
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-bold" id="siswa-tab" data-bs-toggle="tab" data-bs-target="#siswa" type="button">
-                            <i class="fas fa-user-graduate text-primary me-2"></i>Siswa
-                        </button>
-                    </li>
+{{-- GLOBAL ERROR --}}
+@if($errors->any())
+<div class="card border-0 mb-3" style="border-left: 4px solid var(--clr-danger) !important;">
+    <div class="card-body py-3 px-4">
+        <div class="d-flex align-items-start gap-3">
+            <div class="stat-icon stat-icon-danger flex-shrink-0" style="width:32px; height:32px; font-size:0.85rem; border-radius:8px;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div>
+                <div class="fw-bold mb-1" style="font-size: 0.875rem; color: var(--clr-danger);">
+                    Ada kendala pada data yang Anda masukkan:
+                </div>
+                <ul class="mb-0 ps-3" style="font-size: 0.82rem; color: var(--txt-secondary);">
+                    @foreach($errors->all() as $error)
+                        @php
+                            $pesan = $error;
+                            if (str_contains($error, 'file field is required'))       $pesan = 'Anda belum memilih file untuk diunggah.';
+                            if (str_contains($error, 'file must be a file of type'))  $pesan = 'Format file harus .xlsx atau .xls (Excel).';
+                        @endphp
+                        <li>{{ $pesan }}</li>
+                    @endforeach
                 </ul>
-
-                <!-- Tab Content -->
-                <div class="tab-content p-4" id="userTabContent">
-                    <!-- TAB ADMIN -->
-                    <div class="tab-pane fade show active" id="admin" role="tabpanel">
-                        <form method="POST" action="{{ route('admin.users.store') }}">
-                            @csrf
-                            <input type="hidden" name="role" value="admin">
-                            
-                            <div class="row">
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-danger">Nama Lengkap Admin</label>
-                                    <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" 
-                                           value="{{ old('nama') }}" placeholder="Contoh: Admin Utama" required>
-                                    @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-danger">Username Admin</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-danger text-white"><i class="fas fa-user-shield"></i></span>
-                                        <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" 
-                                               value="{{ old('username') }}" placeholder="admin.master" required>
-                                    </div>
-                                    @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-danger">Password</label>
-                                    <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" 
-                                           placeholder="Minimal 6 karakter" required>
-                                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-danger">Konfirmasi Password</label>
-                                    <input type="password" name="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror" 
-                                           placeholder="Ulangi password" required>
-                                </div>
-                            </div>
-
-                            <div class="text-end">
-                                <button type="submit" class="btn btn-danger px-4 fw-bold">
-                                    <i class="fas fa-user-plus me-2"></i>Buat Admin
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- TAB GURU -->
-                    <div class="tab-pane fade" id="guru" role="tabpanel">
-                        <form method="POST" action="{{ route('admin.users.store') }}">
-                            @csrf
-                            <input type="hidden" name="role" value="guru">
-                            
-                            <div class="row">
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-success">Nama Lengkap Guru</label>
-                                    <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" 
-                                           value="{{ old('nama') }}" placeholder="Contoh: Budi Santoso S.Pd" required>
-                                    @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-success">Username Guru</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-success text-white"><i class="fas fa-chalkboard-teacher"></i></span>
-                                        <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" 
-                                               value="{{ old('username') }}" placeholder="budi.guru" required>
-                                    </div>
-                                    @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-success">Mata Pelajaran</label>
-                                        <select name="mapel_id" class="form-select">
-                                            <option value="">Pilih Mata Pelajaran</option>
-                                            @foreach($mapel as $m)
-                                                <option value="{{ $m->id }}" {{ old('mapel_id') == $m->id ? 'selected' : '' }}>
-                                                    {{ $m->nama_mapel }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-success">Password</label>
-                                    <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
-                                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-success">Konfirmasi Password</label>
-                                    <input type="password" name="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror" required>
-                                </div>
-                            </div>
-
-                            <div class="text-end">
-                                <button type="submit" class="btn btn-success px-4 fw-bold">
-                                    <i class="fas fa-chalkboard-teacher me-2"></i>Buat Guru
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- TAB SISWA -->
-                    <div class="tab-pane fade" id="siswa" role="tabpanel">
-                        <form method="POST" action="{{ route('admin.users.store') }}">
-                            @csrf
-                            <input type="hidden" name="role" value="siswa">
-                            
-                            <div class="row">
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-primary">Nama Lengkap Siswa</label>
-                                    <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror" 
-                                           value="{{ old('nama') }}" placeholder="Contoh: Andi Wijaya" required>
-                                    @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-primary">Username Siswa</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-primary text-white"><i class="fas fa-user-graduate"></i></span>
-                                        <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" 
-                                               value="{{ old('username') }}" placeholder="andi7a" required>
-                                    </div>
-                                    @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-lg-4 mb-3">
-                                    <label class="form-label fw-bold text-primary">Kelas</label>
-                                        <select name="kelas_id" class="form-select">
-                                            <option value="">Pilih Kelas</option>
-                                            @foreach($kelas as $k)
-                                                <option value="{{ $k->id }}" {{ old('kelas_id') == $k->id ? 'selected' : '' }}>
-                                                    {{ $k->nama_kelas }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-primary">Password</label>
-                                    <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
-                                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                                <div class="col-lg-6 mb-3">
-                                    <label class="form-label fw-bold text-primary">Konfirmasi Password</label>
-                                    <input type="password" name="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror" required>
-                                </div>
-                            </div>
-
-                            <div class="row bg-light rounded-3 p-3 mb-3">
-                                <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-success">Poin Awal</label>
-                                    <input type="number" name="total_poin" class="form-control" value="{{ old('total_poin', 0) }}" min="0" max="1000">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label fw-bold text-warning">Level Awal</label>
-                                    <input type="number" name="level" class="form-control" value="{{ old('level', 1) }}" min="1" max="50">
-                                </div>
-                            </div>
-
-                            <div class="text-end">
-                                <button type="submit" class="btn btn-primary px-4 fw-bold">
-                                    <i class="fas fa-user-graduate me-2"></i>Buat Siswa
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </div>
+@endif
 
+<div class="card border-0">
+
+    {{-- TAB NAVIGATION --}}
+    <div class="card-header p-0" style="background: var(--bg-muted); border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;">
+        <ul class="nav nav-pills p-2 gap-1" id="userTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="admin-tab"
+                        data-bs-toggle="tab" data-bs-target="#admin-pane" type="button">
+                    <i class="fas fa-user-shield me-2"></i>Admin
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="guru-tab"
+                        data-bs-toggle="tab" data-bs-target="#guru-pane" type="button">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>Guru
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="siswa-tab"
+                        data-bs-toggle="tab" data-bs-target="#siswa-pane" type="button">
+                    <i class="fas fa-user-graduate me-2"></i>Siswa
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    {{-- IMPORT BANNER (berganti sesuai tab aktif) --}}
+    <div style="background: var(--bg-muted); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1.25rem;">
+
+        {{-- Import Admin --}}
+        <div id="import-admin" class="import-section">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="text-label me-2">Import Admin via Excel:</span>
+                <a href="{{ route('admin.export.admin') }}"
+                   class="btn btn-light btn-sm"
+                   style="border: 1px solid var(--border-color) !important;">
+                    <i class="fas fa-download me-1"></i>Unduh Template
+                </a>
+                <form action="{{ route('admin.import.admin') }}" method="POST"
+                      enctype="multipart/form-data"
+                      class="d-flex align-items-center gap-2 flex-grow-1" novalidate>
+                    @csrf
+                    <input type="file" name="file" accept=".xlsx,.xls"
+                           class="form-control form-control-sm @error('file') is-invalid @enderror"
+                           style="max-width: 280px;">
+                    <button type="submit" class="btn btn-primary btn-sm flex-shrink-0">
+                        <i class="fas fa-file-import me-1"></i>Import
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {{-- Import Guru --}}
+        <div id="import-guru" class="import-section d-none">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="text-label me-2">Import Guru via Excel:</span>
+                <a href="{{ route('admin.export.guru') }}"
+                   class="btn btn-light btn-sm"
+                   style="border: 1px solid var(--border-color) !important;">
+                    <i class="fas fa-download me-1"></i>Unduh Template
+                </a>
+                <form action="{{ route('admin.import.guru') }}" method="POST"
+                      enctype="multipart/form-data"
+                      class="d-flex align-items-center gap-2 flex-grow-1" novalidate>
+                    @csrf
+                    <input type="file" name="file" accept=".xlsx,.xls"
+                           class="form-control form-control-sm @error('file') is-invalid @enderror"
+                           style="max-width: 280px;">
+                    <button type="submit" class="btn btn-primary btn-sm flex-shrink-0">
+                        <i class="fas fa-file-import me-1"></i>Import
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {{-- Import Siswa --}}
+        <div id="import-siswa" class="import-section d-none">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="text-label me-2">Import Siswa via Excel:</span>
+                <a href="{{ route('admin.export.siswa') }}"
+                   class="btn btn-light btn-sm"
+                   style="border: 1px solid var(--border-color) !important;">
+                    <i class="fas fa-download me-1"></i>Unduh Template
+                </a>
+                <form action="{{ route('admin.import.siswa') }}" method="POST"
+                      enctype="multipart/form-data"
+                      class="d-flex align-items-center gap-2 flex-grow-1" novalidate>
+                    @csrf
+                    <input type="file" name="file" accept=".xlsx,.xls"
+                           class="form-control form-control-sm @error('file') is-invalid @enderror"
+                           style="max-width: 280px;">
+                    <button type="submit" class="btn btn-primary btn-sm flex-shrink-0">
+                        <i class="fas fa-file-import me-1"></i>Import
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    {{-- FORM AREA --}}
+    <div class="card-body p-4">
+        <div class="tab-content">
+
+            {{-- ==========================
+                 TAB: ADMIN
+            ========================== --}}
+            <div class="tab-pane fade show active" id="admin-pane">
+                <form method="POST" action="{{ route('admin.users.store') }}" novalidate>
+                    @csrf
+                    <input type="hidden" name="role" value="admin">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nama Admin <span class="text-danger">*</span></label>
+                            <input type="text" name="nama"
+                                   class="form-control @error('nama') is-invalid @enderror"
+                                   value="{{ old('role') == 'admin' ? old('nama') : '' }}"
+                                   placeholder="Nama lengkap">
+                            @error('nama')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Username <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="background: var(--bg-muted); border-color: var(--border-color); color: var(--txt-tertiary);">
+                                    <i class="fas fa-at" style="font-size: 0.85rem;"></i>
+                                </span>
+                                <input type="text" name="username"
+                                       class="form-control @error('username') is-invalid @enderror"
+                                       value="{{ old('role') == 'admin' ? old('username') : '' }}"
+                                       placeholder="username.admin">
+                                @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password"
+                                   class="form-control @error('password') is-invalid @enderror">
+                            @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password_confirmation" class="form-control">
+                        </div>
+                        <div class="col-12 pt-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Simpan Akun Admin
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {{-- ==========================
+                 TAB: GURU
+            ========================== --}}
+            <div class="tab-pane fade" id="guru-pane">
+                <form method="POST" action="{{ route('admin.users.store') }}" novalidate>
+                    @csrf
+                    <input type="hidden" name="role" value="guru">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nama Guru <span class="text-danger">*</span></label>
+                            <input type="text" name="nama"
+                                   class="form-control @error('nama') is-invalid @enderror"
+                                   value="{{ old('role') == 'guru' ? old('nama') : '' }}"
+                                   placeholder="Nama lengkap guru">
+                            @error('nama')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">NIP <span class="text-danger">*</span></label>
+                            <input type="text" name="nip"
+                                   class="form-control @error('nip') is-invalid @enderror"
+                                   value="{{ old('role') == 'guru' ? old('nip') : '' }}"
+                                   placeholder="Nomor Induk Pegawai">
+                            @error('nip')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Username <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="background: var(--bg-muted); border-color: var(--border-color); color: var(--txt-tertiary);">
+                                    <i class="fas fa-at" style="font-size: 0.85rem;"></i>
+                                </span>
+                                <input type="text" name="username"
+                                       class="form-control @error('username') is-invalid @enderror"
+                                       value="{{ old('role') == 'guru' ? old('username') : '' }}"
+                                       placeholder="username.guru">
+                                @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password"
+                                   class="form-control @error('password') is-invalid @enderror">
+                            @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password_confirmation" class="form-control">
+                        </div>
+                        <div class="col-12 pt-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Simpan Akun Guru
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {{-- ==========================
+                 TAB: SISWA
+            ========================== --}}
+            <div class="tab-pane fade" id="siswa-pane">
+                <form method="POST" action="{{ route('admin.users.store') }}" novalidate>
+                    @csrf
+                    <input type="hidden" name="role" value="siswa">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nama Siswa <span class="text-danger">*</span></label>
+                            <input type="text" name="nama"
+                                   class="form-control @error('nama') is-invalid @enderror"
+                                   value="{{ old('role') == 'siswa' ? old('nama') : '' }}"
+                                   placeholder="Nama lengkap siswa">
+                            @error('nama')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">NIS <span class="text-danger">*</span></label>
+                            <input type="text" name="nis"
+                                   class="form-control @error('nis') is-invalid @enderror"
+                                   value="{{ old('role') == 'siswa' ? old('nis') : '' }}"
+                                   placeholder="Nomor Induk Siswa">
+                            @error('nis')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Username <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="background: var(--bg-muted); border-color: var(--border-color); color: var(--txt-tertiary);">
+                                    <i class="fas fa-at" style="font-size: 0.85rem;"></i>
+                                </span>
+                                <input type="text" name="username"
+                                       class="form-control @error('username') is-invalid @enderror"
+                                       value="{{ old('role') == 'siswa' ? old('username') : '' }}"
+                                       placeholder="username.siswa">
+                                @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Kelas</label>
+                            <select name="kelas_id" class="form-select @error('kelas_id') is-invalid @enderror">
+                                <option value="">-- Pilih Kelas --</option>
+                                @foreach($kelas as $k)
+                                    <option value="{{ $k->id }}" {{ old('kelas_id') == $k->id ? 'selected' : '' }}>
+                                        {{ $k->nama_kelas }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('kelas_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Poin Awal (XP)</label>
+                            <input type="number" name="total_poin" class="form-control"
+                                   value="{{ old('total_poin', 0) }}" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Level Awal</label>
+                            <input type="number" name="level" class="form-control"
+                                   value="{{ old('level', 1) }}" min="1">
+                        </div>
+                        <div class="col-md-4">
+                            {{-- spacer --}}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password"
+                                   class="form-control @error('password') is-invalid @enderror">
+                            @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Konfirmasi Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password_confirmation" class="form-control">
+                        </div>
+                        <div class="col-12 pt-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-rocket me-2"></i>Simpan Akun Siswa
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('styles')
 <style>
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-}
-
-.card {
-    font-size: 14px;
-}
-
-label {
-    margin-bottom: 6px;
-}
-
-.form-control, .form-select {
-    padding: 8px 10px;
-}
-
-.btn {
-    font-size: 14px;
-    padding: 8px 16px;
-}
-
-.nav-tabs .nav-link {
+/* Tab pills di halaman create */
+#userTabs .nav-link {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--txt-secondary);
+    padding: 0.45rem 1.1rem;
+    border-radius: var(--border-radius-sm);
     border: none;
-    padding: 10px 16px;
-    color: #6c757d;
-    font-size: 14px;
+    transition: all var(--transition);
 }
-
-.nav-tabs .nav-link.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 12px 12px 0 0;
+#userTabs .nav-link.active {
+    background: var(--bg-card) !important;
+    color: var(--txt-primary) !important;
+    box-shadow: var(--shadow-sm);
 }
-
-.nav-tabs .nav-link:hover {
-    background: #f8f9fa;
-    border-radius: 12px 12px 0 0;
-}
+#userTabs #admin-tab.active { color: var(--clr-danger) !important; }
+#userTabs #guru-tab.active  { color: var(--clr-success) !important; }
+#userTabs #siswa-tab.active { color: var(--clr-primary) !important; }
 </style>
+@endpush
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const importMap = {
+        'admin-tab':  document.getElementById('import-admin'),
+        'guru-tab':   document.getElementById('import-guru'),
+        'siswa-tab':  document.getElementById('import-siswa'),
+    };
 
-    const adminTab = document.getElementById('admin-tab');
-    const guruTab = document.getElementById('guru-tab');
-    const siswaTab = document.getElementById('siswa-tab');
-
-    const adminTools = document.getElementById('admin-tools');
-    const guruTools = document.getElementById('guru-tools');
-    const siswaTools = document.getElementById('siswa-tools');
-
-    function hideAll() {
-        adminTools.classList.add('d-none');
-        guruTools.classList.add('d-none');
-        siswaTools.classList.add('d-none');
-    }
-
-    adminTab.addEventListener('click', function () {
-        hideAll();
-        adminTools.classList.remove('d-none');
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', e => {
+            Object.values(importMap).forEach(el => el?.classList.add('d-none'));
+            importMap[e.target.id]?.classList.remove('d-none');
+        });
     });
 
-    guruTab.addEventListener('click', function () {
-        hideAll();
-        guruTools.classList.remove('d-none');
-    });
-
-    siswaTab.addEventListener('click', function () {
-        hideAll();
-        siswaTools.classList.remove('d-none');
-    });
-
-    // ✅ AUTO PINDAH TAB SAAT ERROR
+    // Restore tab saat ada validation error
     const oldRole = "{{ old('role') }}";
-
-    if (oldRole === 'guru') {
-        guruTab.click();
-    } else if (oldRole === 'siswa') {
-        siswaTab.click();
-    } else {
-        adminTab.click();
+    if (oldRole) {
+        document.getElementById(oldRole + '-tab')?.click();
     }
-
 });
 </script>
-@endsection
+@endpush

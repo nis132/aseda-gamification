@@ -3,146 +3,204 @@
 @section('title', 'Dashboard Admin')
 
 @section('content')
-<div class="row g-4">
-    {{-- STATS: TOTAL SISWA --}}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Dashboard Admin</h1>
+        <p class="mb-0" style="color: var(--txt-secondary); font-size: 0.85rem;">
+            Selamat datang kembali — kendalikan ekosistem belajar hari ini.
+        </p>
+    </div>
+    <div class="text-end d-none d-md-block">
+        <div class="fw-bold" style="font-size: 1rem;" id="current-time">--:--</div>
+        <small style="color: var(--txt-secondary);">{{ now()->translatedFormat('l, d F Y') }}</small>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    {{-- STAT: Total Siswa --}}
     <div class="col-lg-4 col-md-6">
-        <div class="card stat-card text-white h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-users fa-3x mb-3 opacity-75"></i>
-                <h3 class="fw-bold mb-1 display-5">{{ number_format($stats['total_siswa']) }}</h3>
-                <p class="mb-0 fw-semibold fs-6">Total Siswa</p>
-                <small class="opacity-75">Terdaftar di sistem</small>
-            </div>
-        </div>
-    </div>
-
-    {{-- STATS: TOTAL GURU --}}
-    <div class="col-lg-4 col-md-6">
-        <div class="card stat-card text-white h-100" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-chalkboard-teacher fa-3x mb-3 opacity-75"></i>
-                <h3 class="fw-bold mb-1 display-5">{{ number_format($stats['total_guru']) }}</h3>
-                <p class="mb-0 fw-semibold fs-6">Total Guru</p>
-                <small class="opacity-75">Tenaga pendidik aktif</small>
-            </div>
-        </div>
-    </div>
-
-    {{-- STATS: TOTAL ADMIN --}}
-    <div class="col-lg-4 col-md-12">
-        <div class="card stat-card text-white h-100" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);">
-            <div class="card-body text-center p-4">
-                <i class="fas fa-user-shield fa-3x mb-3 opacity-75 text-danger"></i>
-                <h3 class="fw-bold mb-1 display-5 text-danger">{{ number_format($stats['total_admin']) }}</h3>
-                <p class="mb-0 fw-semibold fs-6 text-danger">Administrator</p>
-                <small class="text-danger opacity-75">Pengelola sistem</small>
-            </div>
-        </div>
-    </div>
-
-    {{-- QUICK ACTIONS --}}
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-lg">
-            <div class="card-header bg-gradient-primary text-white border-0 py-3">
-                <h5 class="mb-0 fw-bold">
-                    <i class="fas fa-th-large me-2"></i> Panel Kendali Cepat
-                </h5>
-            </div>
+        <div class="card card-stat h-100 border-0">
             <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                    <div class="stat-icon stat-icon-primary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <span class="badge" style="background: var(--clr-primary-light); color: var(--clr-primary);">
+                        Real-time
+                    </span>
+                </div>
+                <div class="stat-number mb-1">{{ number_format($stats['total_siswa']) }}</div>
+                <div class="text-label">Total Siswa</div>
+                <div class="mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
+                    <small style="color: var(--txt-secondary);">
+                        <i class="fas fa-circle me-1" style="font-size: 0.5rem; color: var(--clr-success);"></i>
+                        Siswa terdaftar aktif
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- STAT: Total Guru --}}
+    <div class="col-lg-4 col-md-6">
+        <div class="card card-stat h-100 border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                    <div class="stat-icon stat-icon-success">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <span class="badge" style="background: #d1fae5; color: #065f46;">Aktif</span>
+                </div>
+                <div class="stat-number mb-1">{{ number_format($stats['total_guru']) }}</div>
+                <div class="text-label">Total Guru</div>
+                <div class="mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
+                    <small style="color: var(--txt-secondary);">
+                        <i class="fas fa-circle me-1" style="font-size: 0.5rem; color: var(--clr-success);"></i>
+                        Tenaga pendidik aktif
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- STAT: Administrator --}}
+    <div class="col-lg-4 col-md-12">
+        <div class="card card-stat h-100 border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-3">
+                    <div class="stat-icon stat-icon-danger">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <span class="badge" style="background: #fee2e2; color: #991b1b;">Super Admin</span>
+                </div>
+                <div class="stat-number mb-1">{{ number_format($stats['total_admin']) }}</div>
+                <div class="text-label">Administrator</div>
+                <div class="mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
+                    <small style="color: var(--txt-secondary);">
+                        <i class="fas fa-lock me-1" style="font-size: 0.75rem; color: var(--clr-danger);"></i>
+                        Akses penuh sistem
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {{-- NAVIGASI CEPAT --}}
+    <div class="col-lg-8">
+        <div class="card border-0 mb-3">
+            <div class="card-header d-flex align-items-center gap-2">
+                <div class="stat-icon stat-icon-primary" style="width:32px; height:32px; font-size:0.85rem; border-radius:8px;">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <h6 class="mb-0 fw-bold">Navigasi Cepat</h6>
+            </div>
+            <div class="card-body p-3">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 rounded-4 border-2 shadow-sm hover-lift">
-                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle mb-2">
-                                <i class="fas fa-users-cog fa-2x text-primary"></i>
+                        <a href="{{ route('admin.users.index') }}"
+                           class="d-block p-3 border rounded-3 text-decoration-none hover-lift text-center"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-primary mx-auto mb-2">
+                                <i class="fas fa-users-cog"></i>
                             </div>
-                            <span class="fw-bold fs-6">Kelola User</span>
+                            <div class="fw-bold mb-0" style="font-size: 0.85rem; color: var(--txt-primary);">Kelola User</div>
+                            <div style="font-size: 0.75rem; color: var(--txt-secondary);">Edit, Tambah, Hapus</div>
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <a href="{{ route('admin.kelas.index') }}" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 rounded-4 border-2 shadow-sm hover-lift">
-                            <div class="bg-success bg-opacity-10 p-3 rounded-circle mb-2">
-                                <i class="fas fa-chalkboard fa-2x text-success"></i>
+                        <a href="{{ route('admin.kelas.index') }}"
+                           class="d-block p-3 border rounded-3 text-decoration-none hover-lift text-center"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-success mx-auto mb-2">
+                                <i class="fas fa-chalkboard"></i>
                             </div>
-                            <span class="fw-bold fs-6">Kelola Kelas</span>
+                            <div class="fw-bold mb-0" style="font-size: 0.85rem; color: var(--txt-primary);">Kelola Kelas</div>
+                            <div style="font-size: 0.75rem; color: var(--txt-secondary);">Grup & Rombel</div>
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <a href="{{ route('admin.mapel.index') }}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 rounded-4 border-2 shadow-sm hover-lift">
-                            <div class="bg-info bg-opacity-10 p-3 rounded-circle mb-2">
-                                <i class="fas fa-book fa-2x text-info"></i>
+                        <a href="{{ route('admin.mapel.index') }}"
+                           class="d-block p-3 border rounded-3 text-decoration-none hover-lift text-center"
+                           style="border-color: var(--border-color) !important;">
+                            <div class="stat-icon stat-icon-info mx-auto mb-2">
+                                <i class="fas fa-book"></i>
                             </div>
-                            <span class="fw-bold fs-6">Mata Pelajaran</span>
+                            <div class="fw-bold mb-0" style="font-size: 0.85rem; color: var(--txt-primary);">Mata Pelajaran</div>
+                            <div style="font-size: 0.75rem; color: var(--txt-secondary);">Kurikulum</div>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- INFO SISTEM --}}
-        <div class="card border-0 shadow-lg mt-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <h6 class="mb-0 fw-bold text-primary">
-                    <i class="fas fa-info-circle me-2"></i> Status Fitur Gamifikasi
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-4 border-end">
-                        <div class="p-3">
-                            <i class="fas fa-check-circle text-success mb-2"></i>
-                            <p class="mb-0 small text-muted">Sistem Poin</p>
-                            <span class="badge bg-success bg-opacity-10 text-success">Aktif</span>
-                        </div>
+        {{-- STATUS GAMIFIKASI --}}
+        <div class="card border-0">
+            <div class="card-body p-3">
+                <div class="text-label mb-3">Status Fitur Gamifikasi</div>
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+                         style="background: #d1fae5; border: 1px solid #a7f3d0;">
+                        <i class="fas fa-check-circle" style="color: var(--clr-success); font-size: 0.85rem;"></i>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: #065f46;">Sistem XP</span>
                     </div>
-                    <div class="col-md-4 border-end">
-                        <div class="p-3">
-                            <i class="fas fa-check-circle text-success mb-2"></i>
-                            <p class="mb-0 small text-muted">Leaderboard</p>
-                            <span class="badge bg-success bg-opacity-10 text-success">Aktif</span>
-                        </div>
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+                         style="background: #d1fae5; border: 1px solid #a7f3d0;">
+                        <i class="fas fa-check-circle" style="color: var(--clr-success); font-size: 0.85rem;"></i>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: #065f46;">Leaderboard</span>
                     </div>
-                    <div class="col-md-4">
-                        <div class="p-3">
-                            <i class="fas fa-check-circle text-success mb-2"></i>
-                            <p class="mb-0 small text-muted">Notifikasi PWA</p>
-                            <span class="badge bg-success bg-opacity-10 text-success">Aktif</span>
-                        </div>
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+                         style="background: #fef3c7; border: 1px solid #fde68a;">
+                        <i class="fas fa-sync fa-spin" style="color: var(--clr-warning); font-size: 0.85rem;"></i>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: #92400e;">PWA Sync</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+                         style="background: #d1fae5; border: 1px solid #a7f3d0;">
+                        <i class="fas fa-check-circle" style="color: var(--clr-success); font-size: 0.85rem;"></i>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: #065f46;">Sistem Badge</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- PROFIL ADMIN CARD --}}
+    {{-- PROFIL ADMIN --}}
     <div class="col-lg-4">
-        <div class="card border-0 shadow-lg h-100 overflow-hidden">
-            <div class="card-header bg-gradient-info text-white border-0 py-3">
-                <h6 class="mb-0 fw-bold">
-                    <i class="fas fa-user-shield me-2"></i> Administrator
-                </h6>
+        <div class="card border-0 h-100">
+            {{-- Cover --}}
+            <div class="p-4 text-center"
+                 style="background: linear-gradient(135deg, var(--clr-primary-light) 0%, #e0e7ff 100%);
+                        border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;">
+                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->nama) }}&background=6366f1&color=fff&size=128"
+                     alt="Avatar"
+                     class="rounded-circle shadow-sm"
+                     style="width: 80px; height: 80px; border: 3px solid #fff;">
             </div>
-            <div class="card-body p-4 text-center">
-                <div class="avatar-lg bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                    <i class="fas fa-user-tie fa-3x"></i>
+
+            <div class="card-body p-4">
+                <div class="text-center mb-3">
+                    <h6 class="fw-bold mb-0">{{ auth()->user()->nama }}</h6>
+                    <span class="text-label" style="color: var(--clr-primary);">Super Administrator</span>
                 </div>
-                <h5 class="fw-bold mb-1">{{ auth()->user()->nama }}</h5>
-                <span class="badge bg-primary rounded-pill px-3 py-2 mb-4">Super Admin</span>
-                
-                <div class="list-group list-group-flush text-start">
-                    <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center border-bottom">
-                        <span class="text-muted small"><i class="fas fa-id-badge me-2"></i>Username</span>
-                        <span class="fw-bold">{{ auth()->user()->username }}</span>
+
+                <div class="d-flex flex-column gap-2 mb-4">
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 rounded-2"
+                         style="background: var(--bg-muted);">
+                        <span style="font-size: 0.8rem; color: var(--txt-secondary);">Username</span>
+                        <span style="font-size: 0.82rem; font-weight: 600;">{{ auth()->user()->username }}</span>
                     </div>
-                    <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center border-bottom">
-                        <span class="text-muted small"><i class="fas fa-calendar-alt me-2"></i>Login Terakhir</span>
-                        <span class="fw-bold small">{{ now()->format('d M Y') }}</span>
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 rounded-2"
+                         style="background: var(--bg-muted);">
+                        <span style="font-size: 0.8rem; color: var(--txt-secondary);">Akses Terakhir</span>
+                        <span style="font-size: 0.82rem; font-weight: 600;">{{ now()->format('H:i') }} WIB</span>
                     </div>
                 </div>
-                
-                <div class="mt-4">
-                    <a href="#" class="btn btn-primary w-100 rounded-3 shadow-sm">
-                        <i class="fas fa-cog me-2"></i> Pengaturan Akun
-                    </a>
+
+                <div class="d-grid">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-cog me-2"></i>Pengaturan Sistem
+                    </button>
                 </div>
             </div>
         </div>
@@ -150,33 +208,13 @@
 </div>
 @endsection
 
-@push('styles')
-<style>
-    .stat-card, .hover-lift {
-        border-radius: 20px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border: none !important;
-    }
-    .stat-card:hover, .hover-lift:hover {
-        transform: translateY(-8px) !important;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.12) !important;
-    }
-    .bg-gradient-primary { 
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; 
-    }
-    .bg-gradient-info { 
-        background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%) !important; 
-    }
-    .display-5 { 
-        font-size: 2.5rem; 
-        font-weight: 800; 
-        letter-spacing: -1px;
-    }
-    .card-header {
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-    .btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-info:hover {
-        color: white !important;
-    }
-</style>
+@push('scripts')
+<script>
+function updateTime() {
+    const el = document.getElementById('current-time');
+    if (el) el.textContent = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+}
+setInterval(updateTime, 1000);
+updateTime();
+</script>
 @endpush

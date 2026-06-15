@@ -1,155 +1,135 @@
 @extends('layouts.app')
-
 @section('title', 'Edit Tantangan')
 
 @section('content')
 
-<div class="container-fluid py-4">
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Edit Tantangan</h1>
+        <p class="mb-0" style="color: var(--txt-secondary); font-size: 0.85rem;">
+            Memperbarui: <strong>{{ $tantangan->judul }}</strong>
+        </p>
+    </div>
+    <a href="{{ route('guru.tantangan.index') }}" class="btn btn-light">
+        <i class="fas fa-arrow-left me-2"></i>Kembali
+    </a>
+</div>
 
-    <div class="row">
-        <div class="col-12">
-
-            {{-- BACK BUTTON --}}
-            <div class="mb-4">
-                <a href="{{ route('guru.tantangan.index') }}" class="btn btn-light rounded-pill shadow-sm px-4">
-                    <i class="fas fa-arrow-left me-2 text-primary"></i>Kembali ke Daftar
-                </a>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header card-header-gradient">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-magic"></i>
+                    <span class="fw-bold" style="font-size: 0.9rem;">Modifikasi Tantangan</span>
+                </div>
             </div>
 
-            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <form action="{{ route('guru.tantangan.update', $tantangan) }}" method="POST">
+                @csrf
+                @method('PUT')
 
-                {{-- HEADER --}}
-                <div class="card-header bg-gradient-primary p-4 border-0">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-white bg-opacity-25 rounded-circle p-3 me-3">
-                            <i class="fas fa-edit fa-2x text-white"></i>
+                <div class="card-body p-4">
+
+                    <div class="mb-2 pb-2" style="border-bottom: 1px solid var(--border-color);">
+                        <div class="text-label">Informasi Utama</div>
+                    </div>
+
+                    <div class="mt-3 mb-3">
+                        <label class="form-label">Judul Misi</label>
+                        <input type="text" name="judul"
+                               class="form-control @error('judul') is-invalid @enderror"
+                               placeholder="Contoh: Petualangan Aljabar Dasar"
+                               value="{{ old('judul', $tantangan->judul) }}" required>
+                        @error('judul')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Instruksi Misi</label>
+                        <textarea name="deskripsi" rows="4"
+                                  class="form-control @error('deskripsi') is-invalid @enderror"
+                                  placeholder="Jelaskan apa yang harus dicapai siswa...">{{ old('deskripsi', $tantangan->deskripsi) }}</textarea>
+                        @error('deskripsi')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-2 pb-2" style="border-bottom: 1px solid var(--border-color);">
+                        <div class="text-label">Konfigurasi & Hadiah</div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label">Mata Pelajaran & Kelas</label>
+                            <div class="input-group">
+                                <span class="input-group-text"
+                                      style="background: var(--bg-muted); border-color: var(--border-color); color: var(--clr-primary);">
+                                    <i class="fas fa-book"></i>
+                                </span>
+                                <select name="guru_mapel_kelas_id"
+                                        class="form-select @error('guru_mapel_kelas_id') is-invalid @enderror">
+                                    @foreach($relasi as $r)
+                                        <option value="{{ $r->id }}"
+                                            {{ ($tantangan->mapel_id == $r->mapel_id && $tantangan->kelas_id == $r->kelas_id) ? 'selected' : '' }}>
+                                            {{ $r->mapel->nama_mapel }} - Kelas {{ $r->kelas->nama_kelas }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('guru_mapel_kelas_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="fw-bold text-white mb-0">Edit Tantangan</h3>
-                            <p class="text-white opacity-75 mb-0 small">
-                                Perbarui detail tugas atau materi tantangan Anda
-                            </p>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Total XP Reward</label>
+                            <div class="input-group">
+                                <span class="input-group-text"
+                                      style="background: #fef3c7; border-color: var(--border-color); color: var(--clr-warning);">
+                                    <i class="fas fa-star"></i>
+                                </span>
+                                <input type="number" name="poin"
+                                       class="form-control @error('poin') is-invalid @enderror"
+                                       value="{{ old('poin', $tantangan->poin) }}" required>
+                                @error('poin')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Batas Akhir (Deadline)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"
+                                      style="background: var(--bg-muted); border-color: var(--border-color); color: var(--txt-tertiary);">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </span>
+                                <input type="datetime-local" name="batas_waktu"
+                                       class="form-control @error('batas_waktu') is-invalid @enderror"
+                                       value="{{ old('batas_waktu', date('Y-m-d\TH:i', strtotime($tantangan->batas_waktu))) }}"
+                                       required>
+                                @error('batas_waktu')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="card-body p-5">
-
-                    <form action="{{ route('guru.tantangan.update', $tantangan) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="row g-4">
-
-                            {{-- JUDUL --}}
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Judul Tantangan</label>
-                                <input type="text" name="judul"
-                                    class="form-control form-control-lg @error('judul') is-invalid @enderror"
-                                    value="{{ old('judul', $tantangan->judul) }}"
-                                    required>
-                                @error('judul')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- DESKRIPSI --}}
-                            <div class="col-12">
-                                <label class="form-label fw-bold">Deskripsi / Instruksi</label>
-                                <textarea name="deskripsi" rows="5"
-                                    class="form-control form-control-lg @error('deskripsi') is-invalid @enderror">{{ old('deskripsi', $tantangan->deskripsi) }}</textarea>
-                                @error('deskripsi')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- MAPEL --}}
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Mata Pelajaran</label>
-                                <select name="mapel_id" class="form-select form-select-lg @error('mapel_id') is-invalid @enderror" required>
-                                    <option value="" disabled>Pilih Mapel</option>
-                                    @foreach($mapelGuru as $m)
-                                        <option value="{{ $m->id }}"
-                                            {{ old('mapel_id', $tantangan->mapel_id) == $m->id ? 'selected' : '' }}>
-                                            {{ $m->nama_mapel }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            {{-- KELAS --}}
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Target Kelas</label>
-                                <select name="kelas_id" class="form-select form-select-lg @error('kelas_id') is-invalid @enderror" required>
-                                    <option value="" disabled>Pilih Kelas</option>
-                                    @foreach($kelas as $k)
-                                        <option value="{{ $k->id }}"
-                                            {{ old('kelas_id', $tantangan->kelas_id) == $k->id ? 'selected' : '' }}>
-                                            {{ $k->nama_kelas }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            {{-- WAKTU & POIN --}}
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Batas Waktu</label>
-                                <input type="datetime-local" name="batas_waktu"
-                                    class="form-control @error('batas_waktu') is-invalid @enderror"
-                                    value="{{ old('batas_waktu', date('Y-m-d\TH:i', strtotime($tantangan->batas_waktu))) }}"
-                                    required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Reward Poin (XP)</label>
-                                <input type="number" name="poin"
-                                    class="form-control form-control-lg @error('poin') is-invalid @enderror"
-                                    value="{{ old('poin', $tantangan->poin) }}"
-                                    required>
-                            </div>
-
-                            {{-- BUTTON --}}
-                            <div class="col-12 mt-4">
-                                <hr>
-                                <div class="d-flex justify-content-between">
-                                    <a href="{{ route('guru.tantangan.index') }}"
-                                        class="btn btn-outline-secondary px-4">
-                                        Batal
-                                    </a>
-
-                                    <button type="submit"
-                                        class="btn btn-primary px-5 shadow">
-                                        <i class="fas fa-save me-2"></i>Simpan Perubahan
-                                    </button>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </form>
-
+                <div class="card-body pt-0 px-4 pb-4">
+                    <div class="d-flex justify-content-between align-items-center pt-3"
+                         style="border-top: 1px solid var(--border-color);">
+                        <a href="{{ route('guru.tantangan.index') }}" class="btn btn-light">Batal</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Simpan Perubahan
+                        </button>
+                    </div>
                 </div>
-
-            </div>
-
+            </form>
         </div>
     </div>
-
 </div>
 
 @endsection
-
-<style>
-.bg-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-}
-
-.form-control, .form-select {
-    padding: 12px 14px;
-    border-radius: 12px;
-}
-
-.card {
-    border-radius: 18px;
-}
-</style>

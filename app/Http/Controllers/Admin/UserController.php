@@ -11,6 +11,7 @@ use App\Imports\GuruImport;
 use App\Exports\GuruExport;
 use App\Models\Mapel;
 use App\Models\Kelas;
+use App\Models\GuruMapelKelas;
 use Maatwebsite\Excel\Validators\ValidationException;
 
 class UserController extends Controller
@@ -25,6 +26,15 @@ class UserController extends Controller
 
         if ($request->filled('role')) {
             $query->where('role', $request->role);
+        }
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('nama', 'like', '%' . $request->search . '%')
+                ->orWhere('username', 'like', '%' . $request->search . '%')
+                ->orWhere('nis', 'like', '%' . $request->search . '%')
+                ->orWhere('nip', 'like', '%' . $request->search . '%');
+            });
         }
 
         $users = $query->paginate(15);
@@ -47,15 +57,20 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
+            'nis' => 'nullable|required_if:role,siswa|string|max:20|unique:users,nis',
+            'nip' => 'nullable|required_if:role,guru|string|max:30|unique:users,nip',
             'username' => 'required|string|max:255|unique:users,username',
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|in:admin,guru,siswa',
-            'total_poin' => 'nullable|integer|min:0|max:999999',
             'level' => 'nullable|integer|min:1|max:100',
             'mapel_id' => 'nullable|exists:mapel,id',
             'kelas_id' => 'nullable|exists:kelas,id',
         ], [
             'nama.required' => 'Nama wajib diisi!',
+            'nis.required_if' => 'NIS wajib diisi untuk siswa!',
+            'nis.unique' => 'NIS sudah digunakan!',
+            'nip.required_if' => 'NIP wajib diisi untuk guru!',
+            'nip.unique' => 'NIP sudah digunakan!',
             'username.required' => 'Username wajib diisi!',
             'username.unique' => 'Username sudah digunakan!',
             'password.required' => 'Password wajib diisi!',
@@ -67,10 +82,11 @@ class UserController extends Controller
         try {
             $user = User::create([
                 'nama' => $validated['nama'],
+                'nis' => ($validated['role'] === 'siswa') ? ($validated['nis'] ?? null) : null,
+                'nip' => ($validated['role'] === 'guru') ? ($validated['nip'] ?? null) : null,
                 'username' => $validated['username'],
                 'password' => Hash::make($validated['password']),
                 'role' => $validated['role'],
-                'total_poin' => $validated['total_poin'] ?? 0,
                 'level' => $validated['level'] ?? 1
             ]);
 
@@ -120,15 +136,20 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
+            'nis' => 'nullable|required_if:role,siswa|string|max:20|unique:users,nis,' . $user->id,
+            'nip' => 'nullable|required_if:role,guru|string|max:30|unique:users,nip,' . $user->id,
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'role' => 'required|in:admin,guru,siswa',
-            'total_poin' => 'nullable|integer|min:0|max:999999',
             'level' => 'nullable|integer|min:1|max:100',
             'password' => 'nullable|string|min:6',
             'mapel_id' => 'nullable|exists:mapel,id',
             'kelas_id' => 'nullable|exists:kelas,id',
         ], [
             'nama.required' => 'Nama wajib diisi!',
+            'nis.required_if' => 'NIS wajib diisi untuk siswa!',
+            'nis.unique' => 'NIS sudah digunakan!',
+            'nip.required_if' => 'NIP wajib diisi untuk guru!',
+            'nip.unique' => 'NIP sudah digunakan!',
             'username.required' => 'Username wajib diisi!',
             'username.unique' => 'Username sudah digunakan!',
             'password.min' => 'Password minimal 6 karakter!',
@@ -138,9 +159,10 @@ class UserController extends Controller
         try {
             $updateData = [
                 'nama' => $validated['nama'],
+                'nis' => ($user->role === 'siswa') ? ($validated['nis'] ?? null) : null,
+                'nip' => ($user->role === 'guru') ? ($validated['nip'] ?? null) : null,
                 'username' => $validated['username'],
                 'role' => $validated['role'],
-                'total_poin' => $validated['total_poin'] ?? 0,
                 'level' => $validated['level'] ?? 1
             ];
 
@@ -150,9 +172,20 @@ class UserController extends Controller
 
             $user->update($updateData);
 
-            if ($user->isGuru()) {
-                $user->mapel()->sync($request->mapel_id ? [$request->mapel_id] : []);
-            }
+// Controller update, ganti bagian guru:
+if ($user->isGuru()) {
+    // Hapus dulu semua data mengajar lama
+    $user->mengajar()->delete();
+    
+    // Isi ulang kalau ada mapel_id dan kelas_id
+    if ($request->filled('mapel_id') && $request->filled('kelas_id')) {
+        GuruMapelKelas::create([
+            'guru_id'  => $user->id,
+            'mapel_id' => $request->mapel_id,
+            'kelas_id' => $request->kelas_id,
+        ]);
+    }
+}
 
             if ($user->isSiswa()) {
                 $user->kelas()->sync($request->kelas_id ? [$request->kelas_id] : []);

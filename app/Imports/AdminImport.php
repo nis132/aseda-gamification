@@ -17,7 +17,6 @@ class AdminImport implements ToModel, WithHeadingRow, WithValidation
             'username' => $row['username'],
             'password' => Hash::make($row['password']),
             'role' => 'admin',
-            'total_poin' => 0,
             'level' => 1,
         ]);
     }

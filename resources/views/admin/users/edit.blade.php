@@ -3,181 +3,347 @@
 @section('title', 'Edit ' . ucfirst($user->role))
 
 @section('content')
-<div class="row justify-content-center">
-    <div class="col-xl-9 col-lg-11">
-        <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
-            <div class="card-header bg-gradient-{{ $user->role == 'admin' ? 'danger' : ($user->role == 'guru' ? 'success' : 'primary') }} text-white py-4 position-relative">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <h2 class="h3 mb-1 fw-bold">
-                            <i class="fas fa-user-edit me-2 {{ $user->role == 'admin' ? 'text-danger' : ($user->role == 'guru' ? 'text-success' : 'text-primary') }}"></i>
-                            Edit {{ ucfirst($user->role) }}
-                        </h2>
-                        <p class="mb-0 opacity-90">
-                            <strong>{{ $user->nama }}</strong> 
-                            <span class="badge bg-white bg-opacity-20 ms-2 px-2 py-1">{{ $user->username }}</span>
-                        </p>
-                    </div>
-                    <div class="col-auto">
-                        <div class="btn-group">
-                            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-white">
-                                <i class="fas fa-list me-1"></i>Daftar User
-                            </a>
-                            <a href="{{ route('admin.users.show', $user) }}" class="btn btn-outline-light">
-                                <i class="fas fa-eye me-1"></i>Lihat Detail
-                            </a>
-                        </div>
-                    </div>
+
+@php
+    $roleConfig = [
+        'admin' => ['color' => 'var(--clr-danger)',   'bg' => '#fee2e2', 'txt' => '#991b1b', 'icon' => 'user-shield'],
+        'guru'  => ['color' => 'var(--clr-success)',  'bg' => '#d1fae5', 'txt' => '#065f46', 'icon' => 'chalkboard-teacher'],
+        'siswa' => ['color' => 'var(--clr-primary)',  'bg' => '#dbeafe', 'txt' => '#1e40af', 'icon' => 'user-graduate'],
+    ][$user->role] ?? ['color' => 'var(--txt-secondary)', 'bg' => '#f1f5f9', 'txt' => '#475569', 'icon' => 'user'];
+@endphp
+
+{{-- PAGE HEADER --}}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Edit {{ ucfirst($user->role) }}</h1>
+        <p class="mb-0" style="color: var(--txt-secondary); font-size: 0.85rem;">
+            Perbarui informasi akun pengguna.
+        </p>
+    </div>
+    <a href="{{ route('admin.users.index') }}" class="btn btn-light">
+        <i class="fas fa-arrow-left me-2"></i>Kembali
+    </a>
+</div>
+
+<div class="row g-3">
+
+    {{-- SIDE PANEL --}}
+    <div class="col-lg-3 d-none d-lg-block">
+        <div class="card border-0 h-100">
+            {{-- Cover avatar --}}
+            <div class="p-4 text-center"
+                 style="background: {{ $roleConfig['bg'] }};
+                        border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;">
+                <div class="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white mx-auto mb-3"
+                     style="width: 72px; height: 72px;
+                            background: {{ $roleConfig['color'] }};
+                            font-size: 1.6rem;">
+                    {{ strtoupper(substr($user->nama, 0, 1)) }}
                 </div>
+                <h6 class="fw-bold mb-1" style="font-size: 0.9rem;">{{ $user->nama }}</h6>
+                <span class="badge px-3 py-1 rounded-pill"
+                      style="background: {{ $roleConfig['color'] }}; color: #fff; font-size: 0.7rem;">
+                    <i class="fas fa-{{ $roleConfig['icon'] }} me-1"></i>{{ ucfirst($user->role) }}
+                </span>
             </div>
 
-            <div class="card-body p-0">
-                <!-- Tabs berdasarkan role user -->
-                <ul class="nav nav-tabs border-0 mb-0 bg-light px-4 py-2" id="editTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
-                            <i class="fas fa-user me-2"></i>Profil
-                        </button>
-                    </li>
-                    @if($user->role == 'guru')
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="guru-tab" data-bs-toggle="tab" data-bs-target="#guru" type="button" role="tab">
-                            <i class="fas fa-chalkboard me-2"></i>Mata Pelajaran
-                        </button>
-                    </li>
+            {{-- Info list --}}
+            <div class="card-body p-3">
+                <div class="d-flex flex-column gap-2">
+
+                    <div class="px-3 py-2 rounded-2" style="background: var(--bg-muted);">
+                        <div class="text-label mb-1">Username</div>
+                        <div style="font-size: 0.82rem; font-weight: 600;">
+                            <i class="fas fa-at me-1" style="color: var(--txt-tertiary);"></i>
+                            {{ $user->username }}
+                        </div>
+                    </div>
+
+                    @if($user->isSiswa() && $user->nis)
+                    <div class="px-3 py-2 rounded-2" style="background: var(--bg-muted);">
+                        <div class="text-label mb-1">NIS</div>
+                        <div style="font-size: 0.82rem; font-weight: 600;">{{ $user->nis }}</div>
+                    </div>
                     @endif
-                    @if($user->role == 'siswa')
+
+                    @if($user->isGuru() && $user->nip)
+                    <div class="px-3 py-2 rounded-2" style="background: var(--bg-muted);">
+                        <div class="text-label mb-1">NIP</div>
+                        <div style="font-size: 0.82rem; font-weight: 600;">{{ $user->nip }}</div>
+                    </div>
+                    @endif
+
+                    <div class="px-3 py-2 rounded-2" style="background: var(--bg-muted);">
+                        <div class="text-label mb-1">Terdaftar</div>
+                        <div style="font-size: 0.82rem; font-weight: 600;">
+                            {{ $user->created_at?->translatedFormat('d M Y') ?? '-' }}
+                        </div>
+                    </div>
+
+                    @if($user->isGuru())
+                    <div class="px-3 py-2 rounded-2" style="background: var(--bg-muted);">
+                        <div class="text-label mb-2">Mengajar</div>
+                        @forelse($user->mengajar as $gmk)
+                            <div style="font-size: 0.78rem; font-weight: 600; margin-bottom: 4px;">
+                                <i class="fas fa-book me-1" style="color: var(--clr-success);"></i>
+                                {{ $gmk->mapel->nama_mapel ?? '-' }}
+                                <span style="color: var(--txt-secondary);">/ {{ $gmk->kelas->nama_kelas ?? '-' }}</span>
+                            </div>
+                        @empty
+                            <span style="font-size: 0.78rem; color: var(--txt-tertiary);">Belum ada data.</span>
+                        @endforelse
+                    </div>
+                    @endif
+
+                    @if($user->isSiswa())
+                    <div class="px-3 py-2 rounded-2" style="background: var(--bg-muted);">
+                        <div class="text-label mb-1">Kelas</div>
+                        <div style="font-size: 0.82rem; font-weight: 600;">
+                            {{ $user->kelas->first()?->nama_kelas ?? 'Belum ada kelas' }}
+                        </div>
+                    </div>
+                    @endif
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- MAIN FORM --}}
+    <div class="col-lg-9">
+        <div class="card border-0">
+
+            {{-- Tab nav --}}
+            <div class="card-header d-flex align-items-center gap-3">
+                <ul class="nav nav-pills p-1 rounded-2 mb-0 flex-grow-1"
+                    id="editTabs" role="tablist"
+                    style="background: var(--bg-muted); width: fit-content;">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="siswa-tab" data-bs-toggle="tab" data-bs-target="#siswa" type="button" role="tab">
-                            <i class="fas fa-graduation-cap me-2"></i>Data Siswa
+                        <button class="nav-link active"
+                                id="profile-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#profile"
+                                type="button">
+                            <i class="fas fa-user me-2"></i>Profil Dasar
+                        </button>
+                    </li>
+                    @if($user->role !== 'admin')
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link"
+                                id="role-spec-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#role-spec"
+                                type="button">
+                            <i class="fas fa-{{ $roleConfig['icon'] }} me-2"></i>
+                            Data {{ ucfirst($user->role) }}
                         </button>
                     </li>
                     @endif
                 </ul>
+            </div>
 
-                <form method="POST" action="{{ route('admin.users.update', $user) }}" class="p-5">
+            <div class="card-body p-4">
+                <form method="POST" action="{{ route('admin.users.update', $user) }}">
                     @csrf
                     @method('PUT')
-                    
-                    <!-- TAB PROFIL -->
-                    <div class="tab-content" id="editTabContent">
-                        <div class="tab-pane fade show active p-4 bg-light rounded-3 mb-4" id="profile" role="tabpanel">
-                            <div class="row">
-                                <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold fs-5 text-dark">Nama Lengkap</label>
-                                    <input type="text" name="nama" class="form-control form-control-lg @error('nama') is-invalid @enderror" 
-                                           value="{{ old('nama', $user->nama) }}" required>
-                                    @error('nama') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <input type="hidden" name="role" value="{{ $user->role }}">
+
+                    <div class="tab-content">
+
+                        {{-- TAB: PROFIL DASAR --}}
+                        <div class="tab-pane fade show active" id="profile">
+                            <div class="row g-3">
+
+                                <div class="col-12">
+                                    <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                                    <input type="text" name="nama"
+                                           class="form-control @error('nama') is-invalid @enderror"
+                                           value="{{ old('nama', $user->nama) }}"
+                                           placeholder="Nama lengkap">
+                                    @error('nama')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold fs-5 text-dark">Username</label>
+
+                                @if($user->isSiswa())
+                                <div class="col-md-6">
+                                    <label class="form-label">NIS <span class="text-danger">*</span></label>
+                                    <input type="text" name="nis"
+                                           class="form-control @error('nis') is-invalid @enderror"
+                                           value="{{ old('nis', $user->nis) }}"
+                                           placeholder="Nomor Induk Siswa">
+                                    @error('nis')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                @endif
+
+                                @if($user->isGuru())
+                                <div class="col-md-6">
+                                    <label class="form-label">NIP <span class="text-danger">*</span></label>
+                                    <input type="text" name="nip"
+                                           class="form-control @error('nip') is-invalid @enderror"
+                                           value="{{ old('nip', $user->nip) }}"
+                                           placeholder="Nomor Induk Pegawai">
+                                    @error('nip')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                @endif
+
+                                <div class="{{ ($user->isSiswa() || $user->isGuru()) ? 'col-md-6' : 'col-12' }}">
+                                    <label class="form-label">Username <span class="text-danger">*</span></label>
                                     <div class="input-group">
-                                        <span class="input-group-text bg-secondary">
+                                        <span class="input-group-text" style="background: var(--bg-muted); border-color: var(--border-color); color: var(--txt-tertiary); font-size: 0.85rem;">
                                             <i class="fas fa-at"></i>
                                         </span>
-                                        <input type="text" name="username" class="form-control form-control-lg @error('username') is-invalid @enderror" 
-                                               value="{{ old('username', $user->username) }}" required>
+                                        <input type="text" name="username"
+                                               class="form-control @error('username') is-invalid @enderror"
+                                               value="{{ old('username', $user->username) }}">
+                                        @error('username')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
                                     </div>
-                                    @error('username') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                 </div>
-                            </div>
 
-                            <div class="row">
-                                <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold fs-5 text-dark">Password Baru</label>
-                                    <div class="form-text mb-2">Kosongkan jika tidak ingin ubah password</div>
-                                    <input type="password" name="password" class="form-control form-control-lg @error('password') is-invalid @enderror" 
-                                           placeholder="Kosongkan untuk tetap password lama">
-                                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                {{-- Divider password --}}
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center gap-3 my-1">
+                                        <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+                                        <span class="text-label">Ganti Password (opsional)</span>
+                                        <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+                                    </div>
                                 </div>
-                                <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold fs-5 text-dark">Konfirmasi Password</label>
-                                    <input type="password" name="password_confirmation" class="form-control form-control-lg @error('password_confirmation') is-invalid @enderror" 
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Password Baru</label>
+                                    <input type="password" name="password"
+                                           class="form-control"
+                                           placeholder="Kosongkan jika tidak diganti">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Konfirmasi Password</label>
+                                    <input type="password" name="password_confirmation"
+                                           class="form-control"
                                            placeholder="Ulangi password baru">
                                 </div>
+
                             </div>
                         </div>
 
-                        <!-- TAB GURU -->
-                        @if($user->role == 'guru')
-                        <div class="tab-pane fade p-4 bg-light rounded-3 mb-4" id="guru" role="tabpanel">
-                            <div class="row">
-                                <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-success fs-5">Mata Pelajaran</label>
-                                        <select name="mapel_id" class="form-select form-control-lg">
-                                            <option value="">Pilih Mata Pelajaran</option>
-                                            @foreach($mapel as $m)
-                                                <option value="{{ $m->id }}">
-                                                    {{ $m->nama_mapel }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                </div>
-                            </div>
-                        </div>
-                        @endif
-
-                        <!-- TAB SISWA -->
-                        @if($user->role == 'siswa')
-                        <div class="tab-pane fade p-4 bg-light rounded-3 mb-4" id="siswa" role="tabpanel">
-                            <div class="row">
-                                <div class="col-lg-3 mb-4">
-                                    <label class="form-label fw-bold text-primary fs-5">🆔 NIS</label>
-                                    <input type="text" name="nis" class="form-control form-control-lg" 
-                                           value="{{ old('nis', $user->nis ?? '') }}" placeholder="12345678">
-                                </div>
-                                <div class="col-lg-3 mb-4">
-                                    <label class="form-label fw-bold text-primary fs-5">📚 Kelas</label>
-                                    <select name="kelas" class="form-select form-control-lg">
-                                        <option value="">Pilih Kelas</option>
-                                        <option value="7A" {{ old('kelas', $user->kelas ?? '') == '7A' ? 'selected' : '' }}>7A</option>
-                                        <option value="7B" {{ old('kelas', $user->kelas ?? '') == '7B' ? 'selected' : '' }}>7B</option>
-                                        <option value="8A" {{ old('kelas', $user->kelas ?? '') == '8A' ? 'selected' : '' }}>8A</option>
+                        {{-- TAB: DATA GURU --}}
+                        @if($user->isGuru())
+                        <div class="tab-pane fade" id="role-spec">
+                            <p class="mb-3" style="font-size: 0.82rem; color: var(--txt-secondary);">
+                                <i class="fas fa-info-circle me-1" style="color: var(--clr-info);"></i>
+                                Kombinasi mata pelajaran dan kelas yang diajar oleh guru ini.
+                            </p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Mata Pelajaran</label>
+                                    <select name="mapel_id" class="form-select @error('mapel_id') is-invalid @enderror">
+                                        <option value="">-- Pilih Mata Pelajaran --</option>
+                                        @foreach($mapel as $m)
+                                            <option value="{{ $m->id }}"
+                                                {{ old('mapel_id', $user->mengajar->first()?->mapel_id) == $m->id ? 'selected' : '' }}>
+                                                {{ $m->nama_mapel }}
+                                            </option>
+                                        @endforeach
                                     </select>
+                                    @error('mapel_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div class="col-lg-6 mb-4">
-                                    <label class="form-label fw-bold text-primary fs-5">📅 Tanggal Lahir</label>
-                                    <input type="date" name="tgl_lahir" class="form-control form-control-lg" 
-                                           value="{{ old('tgl_lahir', $user->tgl_lahir ?? '') }}" max="{{ date('Y-m-d') }}">
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Kelas yang Diajar</label>
+                                    <select name="kelas_id" class="form-select @error('kelas_id') is-invalid @enderror">
+                                        <option value="">-- Pilih Kelas --</option>
+                                        @foreach($kelas as $k)
+                                            <option value="{{ $k->id }}"
+                                                {{ old('kelas_id', $user->mengajar->first()?->kelas_id) == $k->id ? 'selected' : '' }}>
+                                                {{ $k->nama_kelas }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('kelas_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
                         </div>
                         @endif
-                    </div>
 
-                    <!-- Action Buttons -->
-                    <div class="bg-light border-top p-4 rounded-bottom">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary btn-lg px-4">
-                                <i class="fas fa-times me-2"></i>Batal
-                            </a>
-                            <div>
-                                <button type="submit" class="btn btn-success btn-lg px-5 shadow-lg me-3">
-                                    <i class="fas fa-save me-2"></i>Update {{ ucfirst($user->role) }}
-                                </button>
+                        {{-- TAB: DATA SISWA --}}
+                        @if($user->isSiswa())
+                        <div class="tab-pane fade" id="role-spec">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Kelas</label>
+                                    <select name="kelas_id" class="form-select @error('kelas_id') is-invalid @enderror">
+                                        <option value="">-- Pilih Kelas --</option>
+                                        @foreach($kelas as $k)
+                                            <option value="{{ $k->id }}"
+                                                {{ old('kelas_id', $user->kelas->first()?->id) == $k->id ? 'selected' : '' }}>
+                                                {{ $k->nama_kelas }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('kelas_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Total Poin</label>
+                                    <input type="number" name="total_poin"
+                                           class="form-control"
+                                           value="{{ old('total_poin', $user->total_poin) }}"
+                                           min="0">
+                                </div>
                             </div>
                         </div>
+                        @endif
+
+                    </div>{{-- end tab-content --}}
+
+                    {{-- ACTION BUTTONS --}}
+                    <div class="d-flex align-items-center gap-2 pt-4 mt-2"
+                         style="border-top: 1px solid var(--border-color);">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-2"></i>Simpan Perubahan
+                        </button>
+                        <a href="{{ route('admin.users.index') }}"
+                           class="btn btn-light px-4">
+                            Batal
+                        </a>
                     </div>
+
                 </form>
             </div>
         </div>
     </div>
-</div>
 
-<style>
-.bg-gradient-danger { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important; }
-.bg-gradient-success { background: linear-gradient(135deg, #28a745 0%, #218838 100%) !important; }
-.bg-gradient-primary { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important; }
-.nav-tabs .nav-link { 
-    padding: 12px 24px; 
-    border-radius: 10px; 
-    margin: 0 4px;
-    border: none;
-}
-.nav-tabs .nav-link.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-.shadow-xl { box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; }
-</style>
+</div>
 @endsection
+
+@push('styles')
+<style>
+/* Tab pills konsisten dengan layout */
+.nav-pills .nav-link {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--txt-secondary);
+    padding: 0.4rem 1rem;
+    border-radius: var(--border-radius-sm);
+    border: none;
+    transition: all var(--transition);
+}
+.nav-pills .nav-link.active {
+    background: var(--bg-card) !important;
+    color: var(--txt-primary) !important;
+    box-shadow: var(--shadow-sm);
+}
+</style>
+@endpush

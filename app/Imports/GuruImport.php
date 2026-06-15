@@ -14,24 +14,13 @@ class GuruImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
 {
     public function model(array $row)
     {
-        // cari mapel berdasarkan nama
-        $mapel = Mapel::where('nama_mapel', $row['mapel'])->first();
-
         $user = new User([
-            'nama'       => $row['nama'],
-            'username'   => $row['username'],
-            'password'   => Hash::make($row['password']),
-            'role'       => 'guru',
-            'total_poin' => $row['total_poin'] ?? 0,
-            'level'      => $row['level'] ?? 1,
+            'nama'     => $row['nama'],
+            'nip'      => $row['nip'] ?? null,
+            'username' => $row['username'],
+            'password' => Hash::make($row['password']),
+            'role'     => 'guru',
         ]);
-
-        $user->save();
-
-        // attach ke pivot (many-to-many)
-        if ($mapel) {
-            $user->mapel()->attach($mapel->id);
-        }
 
         return $user;
     }
@@ -40,9 +29,9 @@ class GuruImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyR
     {
         return [
             'nama'     => 'required|string|max:255',
+            'nip'      => 'required|unique:users,nip',
             'username' => 'required|unique:users,username',
             'password' => 'required|min:6',
-            'mapel'    => 'required|exists:mapel,nama_mapel', // 🔥 validasi nama
         ];
     }
 }
